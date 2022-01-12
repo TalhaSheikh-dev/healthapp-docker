@@ -7,7 +7,10 @@ def video_scrapper(url):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
-    driver = webdriver.Chrome(executable_path="/home/talhasheikh/Documents/health_scraper/chromedriver",chrome_options=options)
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     driver.get(url)
     
     
