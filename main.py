@@ -34,8 +34,7 @@ def video_scrapper(url):
         json.dump(data,f,indent=4)
 
 
-print("add user id")
-client_id= input()
-#client_id = "88672929"
+
+client_id = "88672929"
 url = "https://secure.simplepractice.com/clients/83cdf3a00620ca58/insurance_claims/"+client_id
 video_scrapper(url)
