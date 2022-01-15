@@ -2,6 +2,7 @@
 from bs4 import BeautifulSoup,SoupStrainer
 from selenium import webdriver
 import json
+import os
 
 def video_scrapper(url):
     options = webdriver.ChromeOptions()
