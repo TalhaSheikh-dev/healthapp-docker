@@ -32,8 +32,8 @@ def video_scrapper(url):
     end = html_str.find("//]]>")-2
     data = html_str[start:end]
     #print(data)
-    
-    print("grea")
+    return data
+
 #    with open("table_data.json","w") as f:
 #        json.dump(data,f,indent=4)
 

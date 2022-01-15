@@ -5,5 +5,5 @@ app= Flask(__name__)
 def index():
   client_id = "88672929"
   url = "https://secure.simplepractice.com/clients/83cdf3a00620ca58/insurance_claims/"+client_id
-  video_scrapper(url)
-  return "<h1>Welcome to CodingX</h1>"
+  data = video_scrapper(url)
+  return data
