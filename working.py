@@ -38,6 +38,4 @@ def video_scrapper(url):
 
 
 
-client_id = "88672929"
-url = "https://secure.simplepractice.com/clients/83cdf3a00620ca58/insurance_claims/"+client_id
-video_scrapper(url)
+
