@@ -1,0 +1,6 @@
+bs4==0.0.1
+selenium
+lxml
+Flask==1.1.1
+gunicorn==19.9.0
+Werkzeug==0.15.6
