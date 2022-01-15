@@ -33,8 +33,8 @@ def video_scrapper(url):
     #print(data)
     
     print("grea")
-    with open("table_data.json","w") as f:
-        json.dump(data,f,indent=4)
+#    with open("table_data.json","w") as f:
+#        json.dump(data,f,indent=4)
 
 
 
