@@ -33,9 +33,7 @@ def video_scrapper(url):
     
 
     opts = sorted(pathlib.Path('../../').glob('**/*.pdf'))
-    a = ""
-    for x in opts:
-      a = a + " " +str(x)
+    a = str(opts[0])
     
     return a
 
