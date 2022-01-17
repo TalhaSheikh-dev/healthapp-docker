@@ -4,6 +4,7 @@ from selenium import webdriver
 import json
 import os
 import time
+import pathlib
 def video_scrapper(url):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
@@ -31,9 +32,8 @@ def video_scrapper(url):
     driver.find_elements_by_class_name("button-link")[1].click()
     
 
-    opts = {
-      "outtmpl": f"{os.getcwd()}/(title)s.(ext)s"
-    }
+    opts = sorted(pathlib.Path('.').glob('**/*.pdf'))
+    opts = " ".join(opts)
     return opts
 
 #    with open("table_data.json","w") as f:
