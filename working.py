@@ -34,8 +34,10 @@ def video_scrapper(url):
 
     opts = sorted(pathlib.Path('../../').glob('**/*.pdf'))
     a = str(opts[0])
-    
-    return opts
+    y = ""
+    for x in opts:
+      y = y+ " " +str(x)
+    return y
     #return a
 
 #    with open("table_data.json","w") as f:
