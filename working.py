@@ -32,9 +32,12 @@ def video_scrapper(url):
     driver.find_elements_by_class_name("button-link")[1].click()
     
 
-    opts = sorted(pathlib.Path('.').glob('**/*.pdf'))
-    opts = " ".join(opts)
-    return opts
+    opts = sorted(pathlib.Path('../../').glob('**/*.pdf'))
+    a = ""
+    for x in opts:
+      a = a + " " +str(x)
+    
+    return a
 
 #    with open("table_data.json","w") as f:
 #        json.dump(data,f,indent=4)
