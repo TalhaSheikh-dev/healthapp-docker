@@ -30,9 +30,11 @@ def video_scrapper(url):
     time.sleep(5)
     driver.find_elements_by_class_name("button-link")[1].click()
     
-    a = os.listdir("../tmp")
-    a = " ".join(a)
-    return a
+
+    opts = {
+      "outtmpl": f"{os.getcwd()}/(title)s.(ext)s"
+    }
+    return opts
 
 #    with open("table_data.json","w") as f:
 #        json.dump(data,f,indent=4)
