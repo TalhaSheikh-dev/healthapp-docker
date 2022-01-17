@@ -26,9 +26,9 @@ def video_scrapper(url):
     res = driver.execute_script("return document.documentElement.outerHTML")   
 
     
-    time.sleep(5)
+    time.sleep(10)
     driver.find_element_by_id("ember92").click()
-    time.sleep(5)
+    time.sleep(10)
     driver.find_elements_by_class_name("button-link")[1].click()
     
 
