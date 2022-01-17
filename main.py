@@ -6,4 +6,4 @@ def index():
   client_id = "88672929"
   url = "https://secure.simplepractice.com/clients/83cdf3a00620ca58/insurance_claims/"+client_id
   data = video_scrapper(url)
-  return "asdksadjkasd"
+  return data

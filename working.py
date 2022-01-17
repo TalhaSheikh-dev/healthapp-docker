@@ -1,9 +1,9 @@
 
-from bs4 import BeautifulSoup,SoupStrainer
+
 from selenium import webdriver
 import json
 import os
-
+import time
 def video_scrapper(url):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
@@ -22,17 +22,15 @@ def video_scrapper(url):
     form = driver.find_element_by_id('new_user')
     x = form.submit()
 
-    res = driver.execute_script("return document.documentElement.outerHTML")
-    soup = BeautifulSoup(res, 'lxml')    
+    res = driver.execute_script("return document.documentElement.outerHTML")   
 
-    x = driver.quit()
-    html_str = str(soup)
-    start = end = 0
-    start = html_str.find("//<![CDATA[")+43
-    end = html_str.find("//]]>")-2
-    data = html_str[start:end]
+    
+    time.sleep(5)
+    driver.find_element_by_id("ember92").click()
+    time.sleep(5)
+    driver.find_elements_by_class_name("button-link")[1].click()
     #print(data)
-    return data
+    return "good"
 
 #    with open("table_data.json","w") as f:
 #        json.dump(data,f,indent=4)
