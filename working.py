@@ -25,7 +25,10 @@ def video_scrapper(url):
 
     res = driver.execute_script("return document.documentElement.outerHTML")   
 
-    
+    opts = sorted(pathlib.Path('../../').glob('**/*.pdf'))
+    for x in opts:
+      os.remove(x)
+         
     time.sleep(10)
     driver.find_element_by_id("ember92").click()
     time.sleep(10)
@@ -34,14 +37,8 @@ def video_scrapper(url):
 
     opts = sorted(pathlib.Path('../../').glob('**/*.pdf'))
     a = str(opts[0])
-    y = ""
-    for x in opts:
-      y = y+ " " +str(x)
-    return y
-    #return a
 
-#    with open("table_data.json","w") as f:
-#        json.dump(data,f,indent=4)
+    return a
 
 
 
