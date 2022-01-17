@@ -29,8 +29,10 @@ def video_scrapper(url):
     driver.find_element_by_id("ember92").click()
     time.sleep(5)
     driver.find_elements_by_class_name("button-link")[1].click()
-    #print(data)
-    return "good"
+    
+    a = os.listdir("../tmp")
+    a = " ".join(a)
+    return a
 
 #    with open("table_data.json","w") as f:
 #        json.dump(data,f,indent=4)
