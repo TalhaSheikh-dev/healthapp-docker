@@ -33,7 +33,7 @@ def video_scrapper(url):
     driver.find_element_by_id("ember92").click()
     time.sleep(5)
     driver.find_elements_by_class_name("button-link")[1].click()
-    
+    time.sleep(5)
 
     opts = sorted(pathlib.Path('../../').glob('**/*.pdf'))
     a = str(opts[0])
