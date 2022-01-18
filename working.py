@@ -10,9 +10,9 @@ def video_scrapper(url):
     options.add_argument('--headless')
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
-    driver = webdriver.Chrome(executable_path="/home/talhasheikh/Documents/health_scraper/chromedriver",chrome_options=options)
-    driver.get(url)
-    
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+    x = driver.get(url)
     
     username = driver.find_element_by_id('user_login')
     username.send_keys('george_gina4med')
@@ -22,7 +22,6 @@ def video_scrapper(url):
     form.submit()
 
     data = {}
-    
     time.sleep(10)
     data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
     data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
