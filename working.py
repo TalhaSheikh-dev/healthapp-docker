@@ -246,7 +246,7 @@ def video_scrapper(url):
         name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateFrom]')[0].value"
         check_data = (driver.execute_script(name))
         
-        if aasdas == "":
+        if check_data == "":
             break
         data[key] = check_data 
         key = "claim_serviceLines_" + str(i) +"_serviceDateTo" 	
