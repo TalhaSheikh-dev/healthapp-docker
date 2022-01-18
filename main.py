@@ -6,9 +6,11 @@ app= Flask(__name__)
 def index(number):
 
   url = "https://secure.simplepractice.com/clients/83cdf3a00620ca58/insurance_claims/"+str(number)
-  data = video_scrapper(url)
-  resp = jsonify(data)
-  return resp
-    
+  try:
+      data = video_scrapper(url)
+      resp = jsonify(data)
+      return resp
+  except:
+      return "Not correct ID"
   
 
