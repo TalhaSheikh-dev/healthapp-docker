@@ -47,7 +47,7 @@ def id_scrapper(from_date,end_date,user,password_our):
             except:
                 pass
         string = '//a[@data-page="'+str(i)+'"]'
-        #break
+        break
         try:
             driver.find_element_by_xpath(string).click()
         except:
