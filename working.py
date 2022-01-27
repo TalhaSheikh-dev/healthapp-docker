@@ -17,6 +17,8 @@ def id_scrapper(from_date,end_date,user,password_our):
     driver.get(url)
     
   
+    
+  
     username = driver.find_element_by_id('user_login')
     username.send_keys(user)
     password = driver.find_element_by_id('user_password')
@@ -31,10 +33,9 @@ def id_scrapper(from_date,end_date,user,password_our):
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
-    time.sleep(5)
+    time.sleep(10)
     all_data = []
 
-        
     i = 1
     while True:
         i = i+1
