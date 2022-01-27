@@ -33,7 +33,7 @@ def id_scrapper(from_date,end_date,user,password_our):
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
-    time.sleep(10)
+    time.sleep(5)
     all_data = []
 
     i = 1
@@ -47,6 +47,7 @@ def id_scrapper(from_date,end_date,user,password_our):
             except:
                 pass
         string = '//a[@data-page="'+str(i)+'"]'
+        break
         try:
             driver.find_element_by_xpath(string).click()
         except:
