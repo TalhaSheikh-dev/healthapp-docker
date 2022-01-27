@@ -52,7 +52,7 @@ def id_scrapper(from_date,end_date,user,password_our):
             driver.find_element_by_xpath(string).click()
         except:
             break
-        time.sleep(10)
+        #time.sleep(5)
         
     return all_data
     
