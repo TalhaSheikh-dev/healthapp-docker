@@ -56,6 +56,53 @@ def id_scrapper(from_date,end_date,user,password_our):
         
     return all_data
     
+def id_scrapper_page(from_date,end_date,number_page,user,password_our):
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--headless')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+    url = "https://secure.simplepractice.com/billings/insurance"
+    driver.get(url)
+    
+  
+    
+  
+    username = driver.find_element_by_id('user_login')
+    username.send_keys(user)
+    password = driver.find_element_by_id('user_password')
+    password.send_keys(password_our)
+    form = driver.find_element_by_id('new_user')
+    form.submit()
+
+    driver.get(url+"#claims")
+    driver.find_element_by_xpath("//input[@id='insurance-claims-daterangepicker']").click()
+    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").clear()
+    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").send_keys(from_date)
+    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
+    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
+    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
+    time.sleep(5)
+    all_data = []
+
+    string = '//a[@data-page="'+str(number_page)+'"]'
+    try:
+        driver.find_element_by_xpath(string).click()
+    except:
+        return all_data
+    elems = driver.find_elements_by_tag_name('tr')
+    for elem in elems:
+        try:
+            href = elem.get_attribute('data-url')
+            all_data.append(href.split("/")[-1])
+        except:
+            pass
+        
+    return all_data
+
+
 def video_scrapper(url,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
