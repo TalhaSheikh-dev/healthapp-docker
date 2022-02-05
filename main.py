@@ -48,8 +48,8 @@ def claimsnumber():
   user = request.form["user"]
   password = request.form["password"]
   try:
-      data = id_scrapper_page(from_date,end_date,page,user,password)
-      data = {"all_claims_id":data}
+      data,value = id_scrapper_page(from_date,end_date,page,user,password)
+      data = {"total_page":value,"all_claims_id":data}
       resp = jsonify(data)
       return resp
   except:

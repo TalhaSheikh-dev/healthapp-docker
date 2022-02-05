@@ -87,20 +87,31 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     time.sleep(5)
     
     all_data = []
-    string = '//a[@data-page="'+str(number_page)+'"]'
     
+    elems = driver.find_elements_by_xpath("//a[@data-page]")
+    value = max([int(x.get_attribute("data-page")) for x in elems])
+    
+    all_data = []
+    our_number = 5
+    while int(number_page) >our_number:
+        string = '//a[@data-page="'+str(our_number)+'"]'
+        driver.find_element_by_xpath(string).click()
+        our_number = our_number+4
+        time.sleep(2)
+
+
+    string = '//a[@data-page="'+str(number_page)+'"]'    
     driver.find_element_by_xpath(string).click()
-    time.sleep(5)
+    time.sleep(2)
     elems = driver.find_elements_by_tag_name('tr')
     for elem in elems:
         try:
             href = elem.get_attribute('data-url')
             all_data.append(href.split("/")[-1])
         except:
-            print("hwew")
             pass
         
-    return all_data
+    return all_data,value
 
 def video_scrapper(url,user,password_our):
     options = webdriver.ChromeOptions()
