@@ -110,7 +110,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
             all_data.append(href.split("/")[-1])
         except:
             pass
-     driver.quit()
+    driver.quit()
     return all_data,value_all
 
 def video_scrapper(url,user,password_our):
