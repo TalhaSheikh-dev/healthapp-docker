@@ -91,6 +91,8 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     elems_all = driver.find_elements_by_xpath("//a[@data-page]")
     value_all = [int(x.get_attribute("data-page")) for x in elems_all]
     print(value_all)
+    print(from_date)
+    print(end_date)
     all_data = []
     our_number = 5
     while int(number_page) >our_number:
