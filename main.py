@@ -43,15 +43,14 @@ def claims():
 @app.route('/claimnumber', methods=['POST'])
 def claimsnumber():
   
+  data = value_all = resp = from_date= end_date= " "
   from_date = request.form["start"]
   end_date = request.form["end"]
   page = request.form["page"]
 
   user = request.form["user"]
   password = request.form["password"]
-  del data 
-  del value_all 
-  del resp 
+  
   try:
       data,value_all = id_scrapper_page(from_date,end_date,page,user,password)
       data = {"total_page":value_all,"all_claims_id":data}
