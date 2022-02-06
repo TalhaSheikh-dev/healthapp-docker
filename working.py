@@ -11,6 +11,7 @@ def id_scrapper(from_date,end_date,user,password_our):
     options.add_argument('--headless')
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
+    options.add_argument("window-size=1400,900")
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     url = "https://secure.simplepractice.com/billings/insurance"
@@ -90,11 +91,8 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
     time.sleep(5)
     elems = driver.find_elements_by_xpath("//a[@data-page]")
-    value_all = ([int(x.get_attribute("data-page")) for x in elems])
-    
-    print(value_all)
-    print(from_date)
-    print(end_date)
+    value_all = max([int(x.get_attribute("data-page")) for x in elems])
+
     all_data = []
     our_number = 5
     while int(number_page) >our_number:
@@ -123,6 +121,7 @@ def video_scrapper(url,user,password_our):
     options.add_argument('--headless')
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
+    options.add_argument("window-size=1400,900")
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     x = driver.get(url)
