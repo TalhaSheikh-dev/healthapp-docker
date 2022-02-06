@@ -68,8 +68,6 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.get(url)
     
   
-    
-  
     username = driver.find_element_by_id('user_login')
     username.send_keys(user)
     password = driver.find_element_by_id('user_password')
@@ -77,6 +75,9 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     form = driver.find_element_by_id('new_user')
     form.submit()
 
+
+    
+    
     driver.get(url+"#claims")
     driver.find_element_by_xpath("//input[@id='insurance-claims-daterangepicker']").click()
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").clear()
@@ -84,12 +85,10 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
-    time.sleep(10)
+    time.sleep(5)
+    elems = driver.find_elements_by_xpath("//a[@data-page]")
+    value_all = ([int(x.get_attribute("data-page")) for x in elems])
     
-    all_data = []
-    
-    elems_all = driver.find_elements_by_xpath("//a[@data-page]")
-    value_all = [int(x.get_attribute("data-page")) for x in elems_all]
     print(value_all)
     print(from_date)
     print(end_date)
