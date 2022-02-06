@@ -88,8 +88,8 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     
     all_data = []
     
-    elems = driver.find_elements_by_xpath("//a[@data-page]")
-    value = max([int(x.get_attribute("data-page")) for x in elems])
+    elems_all = driver.find_elements_by_xpath("//a[@data-page]")
+    value_all = max([int(x.get_attribute("data-page")) for x in elems_all])
     
     all_data = []
     our_number = 5
@@ -111,7 +111,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
         except:
             pass
         
-    return all_data,value
+    return all_data,value_all
 
 def video_scrapper(url,user,password_our):
     options = webdriver.ChromeOptions()
