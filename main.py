@@ -54,5 +54,7 @@ def claimsnumber():
       
   except:
       return jsonify({"message":"Not correct data"})
-  
+      
+if __name__ == '__main__':
+    app.run()  
 
