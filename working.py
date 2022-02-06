@@ -53,7 +53,7 @@ def id_scrapper(from_date,end_date,user,password_our):
         except:
             break
         #time.sleep(5)
-        
+    driver.quit()
     return all_data
     
 def id_scrapper_page(from_date,end_date,number_page,user,password_our):
@@ -68,6 +68,8 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.get(url)
     
   
+    
+  
     username = driver.find_element_by_id('user_login')
     username.send_keys(user)
     password = driver.find_element_by_id('user_password')
@@ -75,9 +77,6 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     form = driver.find_element_by_id('new_user')
     form.submit()
 
-
-    
-    
     driver.get(url+"#claims")
     driver.find_element_by_xpath("//input[@id='insurance-claims-daterangepicker']").click()
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").clear()
@@ -86,9 +85,12 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
     time.sleep(5)
-    elems = driver.find_elements_by_xpath("//a[@data-page]")
-    value = max([int(x.get_attribute("data-page")) for x in elems])
-    print(value)
+    
+    all_data = []
+    
+    elems_all = driver.find_elements_by_xpath("//a[@data-page]")
+    value_all = max([int(x.get_attribute("data-page")) for x in elems_all])
+    
     all_data = []
     our_number = 5
     while int(number_page) >our_number:
@@ -96,9 +98,9 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
         driver.find_element_by_xpath(string).click()
         our_number = our_number+4
         time.sleep(2)
-    
-    
-    string = '//a[@data-page="'+str(number_page)+'"]'
+
+
+    string = '//a[@data-page="'+str(number_page)+'"]'    
     driver.find_element_by_xpath(string).click()
     time.sleep(2)
     elems = driver.find_elements_by_tag_name('tr')
@@ -107,12 +109,9 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
             href = elem.get_attribute('data-url')
             all_data.append(href.split("/")[-1])
         except:
-            
             pass
-        
-    return all_data,value
-    
-
+     driver.quit()
+    return all_data,value_all
 
 def video_scrapper(url,user,password_our):
     options = webdriver.ChromeOptions()
@@ -408,6 +407,7 @@ def video_scrapper(url,user,password_our):
         name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][renderingProvider][npi]')[0].value"
         data[key] = (driver.execute_script(name))
 
+    driver.quit()
     return data
 
 
