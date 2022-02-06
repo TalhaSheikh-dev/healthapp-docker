@@ -50,6 +50,7 @@ def claimsnumber():
   
   try:
       full = id_scrapper_page(from_date,end_date,page,user,password)
+      print(full[1])
       return jsonify({"total_page":full[1],"all_claims_id":full[0]})
       
   except:
