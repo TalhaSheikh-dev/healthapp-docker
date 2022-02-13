@@ -110,6 +110,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
 
         
     time.sleep(2)
+    all_data = []
     elems = driver.find_elements_by_tag_name('tr')
     for elem in elems:
         try:
