@@ -92,7 +92,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     time.sleep(5)
     elems = driver.find_elements_by_xpath("//a[@data-page]")
     try:
-        value = max([int(x.get_attribute("data-page")) for x in elems])
+        value_all = max([int(x.get_attribute("data-page")) for x in elems])
         
         our_number = 5
         while int(number_page) >our_number:
@@ -106,7 +106,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
         driver.find_element_by_xpath(string).click()
     
     except:
-        value = 1
+        value_all = 1
         
     time.sleep(2)
     elems = driver.find_elements_by_tag_name('tr')
