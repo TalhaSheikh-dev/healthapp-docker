@@ -48,12 +48,12 @@ def claimsnumber():
   user = request.form["user"]
   password = request.form["password"]
   
-  #try:
-  full = id_scrapper_page(from_date,end_date,page,user,password)
-  return jsonify({"total_page":full[1],"all_claims_id":full[0]})
+  try:
+      full = id_scrapper_page(from_date,end_date,page,user,password)
+      return jsonify({"total_page":full[1],"all_claims_id":full[0]})
       
-  #except:
-   #   return jsonify({"message":"Not correct data"})
+  except:
+      return jsonify({"message":"Not correct data"})
       
 if __name__ == '__main__':
     app.run()  
