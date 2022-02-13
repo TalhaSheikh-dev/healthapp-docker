@@ -48,7 +48,7 @@ def claimsnumber():
   user = request.form["user"]
   password = request.form["password"]
   
-  tr#y:
+  #try:
   full = id_scrapper_page(from_date,end_date,page,user,password)
   return jsonify({"total_page":full[1],"all_claims_id":full[0]})
       
