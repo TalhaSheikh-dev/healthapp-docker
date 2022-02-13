@@ -91,22 +91,20 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
     time.sleep(5)
     elems = driver.find_elements_by_xpath("//a[@data-page]")
-    try:
-        value_all = max([int(x.get_attribute("data-page")) for x in elems])
+    value_all = max([int(x.get_attribute("data-page")) for x in elems])
         
-        our_number = 5
-        while int(number_page) >our_number:
-            string = '//a[@data-page="'+str(our_number)+'"]'
-            driver.find_element_by_xpath(string).click()
-            our_number = our_number+4
-            time.sleep(2)
-    
-    
-        string = '//a[@data-page="'+str(number_page)+'"]'
+    our_number = 5
+    while int(number_page) >our_number:
+        string = '//a[@data-page="'+str(our_number)+'"]'
         driver.find_element_by_xpath(string).click()
+        our_number = our_number+4
+        time.sleep(2)
     
-    except:
-        value_all = 1
+    
+    string = '//a[@data-page="'+str(number_page)+'"]'
+    driver.find_element_by_xpath(string).click()
+    
+
         
     time.sleep(2)
     elems = driver.find_elements_by_tag_name('tr')
