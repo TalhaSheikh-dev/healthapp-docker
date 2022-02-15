@@ -7,11 +7,12 @@ app.debug = False
 def data():
 
   
-  number = request.form["number"]
+  user = ""
+  first_number = request.form["first_number"]
+  second_number = request.form["second_number"]
   user = request.form["user"]
   password = request.form["password"]
-  user = ""
-  url = "https://secure.simplepractice.com/clients/83cdf3a00620ca58/insurance_claims/"+str(number)
+  url = "https://secure.simplepractice.com/clients/"+str(first_number)+"/insurance_claims/"+str(second_number)
   try:
       return jsonify(video_scrapper(url,user,password))
       
