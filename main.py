@@ -33,11 +33,8 @@ def claims():
   user = request.form["user"]
   password = request.form["password"]
   data = ""
-  try:
-      return jsonify({"all_claims_id":id_scrapper(from_date,end_date,user,password)})
+  return jsonify({"all_claims_id":id_scrapper(from_date,end_date,user,password)})
       
-  except:
-      return jsonify({"message":"Not correct data"})
   
 @app.route('/claimnumber', methods=['POST'])
 def claimsnumber():
