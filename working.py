@@ -24,29 +24,48 @@ def id_scrapper(from_date,end_date,status,user,password_our):
     form.submit()    
     
     all_data = []
+    elems = driver.find_elements_by_tag_name('tr')
+    for elem in elems:
+        try:
+            href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
+            first = href.split("/")[-3]
+            second = href.split("/")[-1]
+            dicti = {"first_id":first,"second_id":second}
+            all_data.append(dicti)
+
+        except:
+            pass
     lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
     match=False
-    main_list = []
     while(match==False):
         lastCount = lenOfPage
-        time.sleep(2)
+        time.sleep(5)
         elems = driver.find_elements_by_tag_name('tr')
         for elem in elems:
             try:
                 href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
                 first = href.split("/")[-3]
                 second = href.split("/")[-1]
-                if second not in main_list:
-                    dicti ={"first_id":first,"second_id":second}
-                    all_data.append(dicti)
-                    main_list.append(second)
+                dicti = {"first_id":first,"second_id":second}
+                all_data.append(dicti)
+
             except:
                 pass
         lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
         if lastCount==lenOfPage:
             match=True
-    
+    elems = driver.find_elements_by_tag_name('tr')
+    for elem in elems:
+        try:
+            href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
+            first = href.split("/")[-3]
+            second = href.split("/")[-1]
+            dicti = {"first_id":first,"second_id":second}
+            all_data.append(dicti)
 
+        except:
+            pass
+    all_data = ([dict(y) for y in set(tuple(x.items()) for x in all_data)])
     return all_data
     
 def id_scrapper_page(from_date,end_date,number_page,user,password_our):
