@@ -39,7 +39,7 @@ def id_scrapper(from_date,end_date,status,user,password_our):
     match=False
     while(match==False):
         lastCount = lenOfPage
-        time.sleep(5)
+
         elems = driver.find_elements_by_tag_name('tr')
         for elem in elems:
             try:
