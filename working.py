@@ -26,14 +26,20 @@ def id_scrapper(from_date,end_date,status,user,password_our):
     all_data = []
     lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
     match=False
+    main_list = []
     while(match==False):
         lastCount = lenOfPage
-        #time.sleep(2)
+        time.sleep(2)
         elems = driver.find_elements_by_tag_name('tr')
         for elem in elems:
             try:
                 href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
-                all_data.append({"first_id":href.split("/")[-3],"second_id":href.split("/")[-1]})
+                first = href.split("/")[-3]
+                second = href.split("/")[-1]
+                if second not in main_list:
+                    dicti ={"first_id":first,"second_id":second}
+                    all_data.append(dicti)
+                    main_list.append(second)
             except:
                 pass
         lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
@@ -41,7 +47,7 @@ def id_scrapper(from_date,end_date,status,user,password_our):
             match=True
     
 
-    return [ast.literal_eval(el1) for el1 in set([str(el2) for el2 in all_data])]
+    return all_data
     
 def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     options = webdriver.ChromeOptions()
