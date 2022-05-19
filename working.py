@@ -8,7 +8,7 @@ import ast
 def id_scrapper(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
-    #options.add_argument('--headless')
+    options.add_argument('--headless')
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(executable_path="/home/talhasheikh/Documents/health_scraper/chromedriver",chrome_options=options)

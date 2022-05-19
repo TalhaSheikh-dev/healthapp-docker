@@ -31,10 +31,7 @@ def claims():
   password = request.form["password"]
   status = request.form["status"]
   data = ""
-  try:
-      return jsonify({"all_claims_id":id_scrapper(from_date,end_date,status,user,password)})
-  except:
-      return jsonify({"message":"Not correct data"})      
+  return jsonify({"all_claims_id":id_scrapper(from_date,end_date,status,user,password)})
   
       
 if __name__ == '__main__':
