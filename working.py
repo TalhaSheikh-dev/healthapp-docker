@@ -3,59 +3,43 @@
 from selenium import webdriver
 import os
 import time
+import ast
 
-
-def id_scrapper(from_date,end_date,user,password_our):
+def id_scrapper(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
-    options.add_argument('--headless')
+    #options.add_argument('--headless')
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
-    options.add_argument("window-size=1400,900")
-    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
-    url = "https://secure.simplepractice.com/billings/insurance"
+    driver = webdriver.Chrome(executable_path="/home/talhasheikh/Documents/health_scraper/chromedriver",chrome_options=options)
+    url = "https://secure.simplepractice.com/billings/insurance/claims?endDate={}&startDate={}&status={}".format(end_date,from_date,status)
     driver.get(url)
-    
-  
-    
-  
     username = driver.find_element_by_id('user_login')
     username.send_keys(user)
     password = driver.find_element_by_id('user_password')
     password.send_keys(password_our)
     form = driver.find_element_by_id('new_user')
-    form.submit()
-
-    driver.get(url+"#claims")
-    driver.find_element_by_xpath("//input[@id='insurance-claims-daterangepicker']").click()
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").clear()
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").send_keys(from_date)
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
-    time.sleep(5)
+    form.submit()    
+    
     all_data = []
-
-    i = 1
-    while True:
-        i = i+1
+    lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
+    match=False
+    while(match==False):
+        lastCount = lenOfPage
+        #time.sleep(2)
         elems = driver.find_elements_by_tag_name('tr')
         for elem in elems:
             try:
-                href = elem.get_attribute('data-url')
+                href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
                 all_data.append({"first_id":href.split("/")[-3],"second_id":href.split("/")[-1]})
             except:
                 pass
-        string = '//a[@data-page="'+str(i)+'"]'
-        break
-        try:
-            driver.find_element_by_xpath(string).click()
-        except:
-            break
-        #time.sleep(5)
-    driver.quit()
-    return all_data
+        lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
+        if lastCount==lenOfPage:
+            match=True
+    
+
+    return [ast.literal_eval(el1) for el1 in set([str(el2) for el2 in all_data])]
     
 def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     options = webdriver.ChromeOptions()
