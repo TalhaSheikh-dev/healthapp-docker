@@ -28,8 +28,8 @@ def unbilled_create(from_date,end_date,user,password_our):
 
     #driver.get(url+"#claims")
 
-
-    driver.execute_script('return document.getElementsByClassName("button ghost-secondary filtered")[0].click()')
+    driver.find_elements_by_css_selector("button.ghost-secondary.filtered")[0].click()
+    #driver.execute_script('return document.getElementsByClassName("button ghost-secondary filtered")[0].click()')
     driver.find_element_by_name("daterangepicker_start").clear()
     driver.find_element_by_name("daterangepicker_start").send_keys(from_date)
     driver.find_element_by_name("daterangepicker_end").clear()
