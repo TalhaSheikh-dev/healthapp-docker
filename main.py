@@ -1,6 +1,6 @@
 #fool
 from flask import Flask,request
-from working import video_scrapper,id_scrapper
+from working import video_scrapper,id_scrapper,unbilled_create
 from flask import jsonify
 app= Flask(__name__)
 app.debug = False
@@ -32,6 +32,21 @@ def claims():
   status = request.form["status"]
   data = ""
   return jsonify({"all_claims_id":id_scrapper(from_date,end_date,status,user,password)})
+  
+@app.route('/unbill', methods=['POST'])
+def unbill():
+
+  from_date = request.form["start"]
+  end_date = request.form["end"]
+  user = request.form["user"]
+  password = request.form["password"]
+
+  data = ""
+  try:
+      unbilled_create(from_date,end_date,user,password)
+      return jsonify({"message":"Unbilled created"})
+  except:
+      return jsonify({"message":"Unable to create unbilled"})
   
       
 if __name__ == '__main__':

@@ -5,6 +5,46 @@ import os
 import time
 import ast
 
+
+def unbilled_create(from_date,end_date,user,password_our):
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--headless')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.add_argument("window-size=1400,900")
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+    url = "https://secure.simplepractice.com/billings/insurance"
+    driver.get(url)
+    
+  
+    username = driver.find_element_by_id('user_login')
+    username.send_keys(user)
+    password = driver.find_element_by_id('user_password')
+    password.send_keys(password_our)
+    form = driver.find_element_by_id('new_user')
+    form.submit()
+
+    #driver.get(url+"#claims")
+
+
+    driver.execute_script('return document.getElementsByClassName("button ghost-secondary filtered")[0].click()')
+    driver.find_element_by_name("daterangepicker_start").clear()
+    driver.find_element_by_name("daterangepicker_start").send_keys(from_date)
+    driver.find_element_by_name("daterangepicker_end").clear()
+    driver.find_element_by_name("daterangepicker_end").send_keys(end_date)
+    driver.find_element_by_class_name("applyBtn").click()  
+    time.sleep(10)
+    #driver.find_elements_by_css_selector("button.primary")[0].click() 
+    driver.execute_script('return document.getElementsByClassName("button primary")[0].click()')
+    time.sleep(5)
+    
+    driver.execute_script('return document.getKElementsByClassName("item ember-view")[0].getElementsByTagName("button")[0].click()')
+    time.sleep(5)
+    driver.execute_script('return document.getElementsByClassName("swal2-confirm")[0].click()')
+
+    
 def id_scrapper(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
