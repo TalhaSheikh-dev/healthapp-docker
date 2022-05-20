@@ -41,11 +41,11 @@ def unbill():
   user = request.form["user"]
   password = request.form["password"]
 
-  #try:
-  unbilled_create(from_date,end_date,user,password)
-  return jsonify({"message":"Unbilled created"})
-  #except:
-  #    return jsonify({"message":"Unable to create unbilled"})
+  try:
+      unbilled_create(from_date,end_date,user,password)
+      return jsonify({"message":"Unbilled created"})
+  except:
+      return jsonify({"message":"Unable to create unbilled"})
   
       
 if __name__ == '__main__':
