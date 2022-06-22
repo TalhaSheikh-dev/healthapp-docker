@@ -173,6 +173,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.quit()
     return all_data,value_all
 
+get_letter = {0:"A",1:"B",2:"C",3:"D",4:"E",5:"F",6:"G",7:"H",8:"I",9:"J",10:"K",11:"L"}
 def video_scrapper(url,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
@@ -437,7 +438,8 @@ def video_scrapper(url,user,password_our):
     
         key = "claimserviceLines_" + str(i) +"_description" 	
         name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][description]')[0].value"
-        data[key] = (driver.execute_script(name))       
+        data[key] = (driver.execute_script(name))      
+         
         lit_let = []
         for ss in range(0,9):
             
@@ -451,6 +453,7 @@ def video_scrapper(url,user,password_our):
     
         key = "claim_serviceLines_"+str(i)+ "_Diagnose_pointer"  
         data[key] = lit_let
+        
         for x in range(0,4):
             key = "claim_serviceLines_" + str(i) +"_procedureModifiers_"+str(x) 	
             name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureModifiers]["+str(x)+"]')[0].value"
