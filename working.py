@@ -438,7 +438,19 @@ def video_scrapper(url,user,password_our):
         key = "claimserviceLines_" + str(i) +"_description" 	
         name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][description]')[0].value"
         data[key] = (driver.execute_script(name))       
+        lit_let = []
+        for ss in range(0,9):
+            
+            name = "return document.getElementsByClassName('dc-pointers-table')["+str(i)+"].getElementsByTagName('input')["+str(ss)+"].checked"
+            name = (driver.execute_script(name))  
 
+            if name == True:
+
+                letter = get_letter[ss]
+                lit_let.append(letter)
+    
+        key = "claim_serviceLines_"+str(i)+ "_Diagnose_pointer"  
+        data[key] = lit_let
         for x in range(0,4):
             key = "claim_serviceLines_" + str(i) +"_procedureModifiers_"+str(x) 	
             name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureModifiers]["+str(x)+"]')[0].value"
