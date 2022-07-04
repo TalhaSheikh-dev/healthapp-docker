@@ -14,12 +14,12 @@ def data():
   user = request.form["user"]
   password = request.form["password"]
   url = "https://secure.simplepractice.com/clients/"+str(first_number)+"/insurance_claims/"+str(second_number)
-  return jsonify(video_scrapper(url,user,password))
-  #try:
-      #return jsonify(video_scrapper(url,user,password))
+  #return jsonify(video_scrapper(url,user,password))
+  try:
+      return jsonify(video_scrapper(url,user,password))
       
-  #except:
-      #return jsonify({"message":"Not correct data"})
+  except:
+      return jsonify({"message":"Not correct data"})
       
       
       
