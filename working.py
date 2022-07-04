@@ -317,9 +317,13 @@ def video_scrapper(url,user,password_our):
     
     
     data["billingProvider_phoneNumber"] = (driver.execute_script("return document.getElementsByName('billingProvider[phoneNumber]')[0].value"))
-    data["billingProvider_lastName"] = (driver.execute_script("return document.getElementsByName('billingProvider[lastName]')[0].value"))
-    data["billingProvider_firstName"] = (driver.execute_script("return document.getElementsByName('billingProvider[firstName]')[0].value"))
-    data["billingProvider_middleName"] = (driver.execute_script("return document.getElementsByName('billingProvider[middleName]')[0].value"))
+    try:
+        data["billingProvider_lastName"] = (driver.execute_script("return document.getElementsByName('billingProvider[lastName]')[0].value"))
+        data["billingProvider_firstName"] = (driver.execute_script("return document.getElementsByName('billingProvider[firstName]')[0].value"))
+        data["billingProvider_middleName"] = (driver.execute_script("return document.getElementsByName('billingProvider[middleName]')[0].value"))
+        
+    except:
+        data["billingProvider_organization"] = (driver.execute_script("return document.getElementsByName('billingProvider[organizationName]')[0].value"))
     data["billingProvider_streetLine1"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][streetLine1]')[0].value"))
     data["billingProvider_streetLine2"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][streetLine2]')[0].value"))
     data["billingProvider_city"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][city]')[0].value"))
