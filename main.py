@@ -6,7 +6,7 @@ app= Flask(__name__)
 app.debug = False
 
 @app.route('/clients', methods=['POST'])
-def data():
+def clients_data():
   user = request.form["user"]
   password = request.form["password"]
   #try:
