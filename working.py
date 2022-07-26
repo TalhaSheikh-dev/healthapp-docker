@@ -6,7 +6,7 @@ import time
 import ast
 
 
-def get_all_client(user,password):
+def get_all_client(user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
@@ -22,7 +22,7 @@ def get_all_client(user,password):
     username = driver.find_element_by_id('user_login')
     username.send_keys(user)
     password = driver.find_element_by_id('user_password')
-    password.send_keys(password)
+    password.send_keys(password_our)
     form = driver.find_element_by_id('new_user')
     form.submit()
 
