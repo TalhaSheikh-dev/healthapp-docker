@@ -22,7 +22,7 @@ def get_all_client(user,password):
     username = driver.find_element_by_id('user_login')
     username.send_keys(user)
     password = driver.find_element_by_id('user_password')
-    password.send_keys(password_our)
+    password.send_keys(password)
     form = driver.find_element_by_id('new_user')
     form.submit()
 
