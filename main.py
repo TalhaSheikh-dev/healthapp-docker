@@ -1,9 +1,23 @@
 #fool
 from flask import Flask,request
-from working import video_scrapper,id_scrapper,unbilled_create
+from working import video_scrapper,id_scrapper,unbilled_create,get_all_client
 from flask import jsonify
 app= Flask(__name__)
 app.debug = False
+
+@app.route('/clients', methods=['POST'])
+def data():
+  user = request.form["user"]
+  password = request.form["password"]
+  #try:
+  return jsonify(get_all_client(user,password))
+      
+  #except:
+  #    return jsonify({"message":"Not correct data"})
+      
+
+
+
 @app.route('/data', methods=['POST'])
 def data():
 

@@ -6,6 +6,42 @@ import time
 import ast
 
 
+def get_all_client(user,password):
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--headless')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.add_argument("window-size=1400,900")
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+   
+    url = "https://secure.simplepractice.com/clients"
+    driver.get(url)
+
+    username = driver.find_element_by_id('user_login')
+    username.send_keys(user)
+    password = driver.find_element_by_id('user_password')
+    password.send_keys(password_our)
+    form = driver.find_element_by_id('new_user')
+    form.submit()
+
+    url = '''https://secure.simplepractice.com/frontend/base-clients?     fields[baseClients]=emails,clinician,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge&fields[clients]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,enableEmailReminders,enableOutstandingDocumentReminders,enableSmsvoiceReminders,isMinor,reminderEmail,reminderPhone&fields[clientCouples]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,firstNameLastInitial&fields[insuranceInfo]=hieEnabled&filter[thisType]=Client,ClientCouple&include=phones,emails,insuranceInfos,clientRelationships.client,clientRelationships.relatedClient.phones,clientRelationships.relatedClient.emails,reciprocalClientRelationships.client.phones,reciprocalClientRelationships.client.emails,reciprocalClientRelationships.relatedClient&page[number]='''
+    url_2 = '''&page[size]=50&sort=lastName'''
+    full = []
+    i = 1
+    while True:
+        response = driver.get(url+str(i)+url_2)
+        json_data = driver.find_element_by_tag_name("body").text
+        json_data = json.loads(json_data)["data"]
+        if len(json_data) == 0:
+            break
+  
+        full = full + json_data
+        i = i+1
+    return full
+    
+    
 def unbilled_create(from_date,end_date,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
