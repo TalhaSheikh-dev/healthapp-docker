@@ -254,9 +254,12 @@ def video_scrapper(url,user,password_our):
     data["patient_streetLine2"] = (driver.execute_script("return document.getElementsByName('dependent[address][streetLine2]')[0].value"))
     data["patient_state"] = (driver.execute_script("return document.getElementsByName('dependent[address][state]')[0].value"))
     data["patient_city"] = (driver.execute_script("return document.getElementsByName('dependent[address][city]')[0].value"))
-    data["patient_id"] = (driver.execute_script("return document.getElementsByName('dependent[address][zip]')[0].value"))
-    data["patient_id"] = (driver.execute_script("return document.getElementsByName('dependent[phoneNumber]')[0].value"))
-
+    data["patient_zip"] = (driver.execute_script("return document.getElementsByName('dependent[address][zip]')[0].value"))
+    data["patient_telephone"] = (driver.execute_script("return document.getElementsByName('dependent[phoneNumber]')[0].value"))
+    try:
+        data["patient_id"] = (driver.execute_script("return document.getElementsByName('dependent[id]')[0].value"))
+    except:
+        data["patient_id"] = ""
 
     data["insured_streetLine1"] = (driver.execute_script("return document.getElementsByName('subscriber[address][streetLine1]')[0].value"))
     data["insured_streetLine2"] = (driver.execute_script("return document.getElementsByName('subscriber[address][streetLine2]')[0].value"))
