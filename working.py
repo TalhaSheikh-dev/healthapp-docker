@@ -74,9 +74,15 @@ def unbilled_create(from_date,end_date,user,password_our):
     driver.find_element_by_class_name("applyBtn").click()  
     time.sleep(5)
     #driver.find_elements_by_css_selector("button.primary")[0].click() 
-    driver.execute_script('return document.getElementsByClassName("button primary")[0].click()')
+    a = driver.execute_script('return document.getElementsByClassName("button primary")')
+    index = 0
+    for i in range(len(a)):
+        if a[i].text == "Create":
+            index = i 
+            break
+            
+    a = driver.execute_script('return document.getElementsByClassName("button primary")[{}].click()'.format(index))
     time.sleep(5)
-    
     driver.execute_script('return document.getKElementsByClassName("item ember-view")[0].getElementsByTagName("button")[0].click()')
     time.sleep(5)
     driver.execute_script('return document.getElementsByClassName("swal2-confirm")[0].click()')
