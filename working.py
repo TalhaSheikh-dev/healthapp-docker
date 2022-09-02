@@ -392,6 +392,15 @@ def video_scrapper(url,user,password_our):
         data["patient_employment"] = "no"
         
 
+    data["patient_relationship_to_insecured"] = "" 
+    if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[0].checked")):
+        data["patient_relationship_to_insecured"] = "self"
+    if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[1].checked")):
+        data["patient_relationship_to_insecured"] = "spouse"
+    if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[2].checked")):
+        data["patient_relationship_to_insecured"] = "child"
+    if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[3].checked")):
+        data["patient_relationship_to_insecured"] = "other"        
 
     data["auto_accident"] = "" 
     if (driver.execute_script("return document.getElementsByName('claim[autoAccident]')[0].checked")):
