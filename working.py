@@ -391,7 +391,7 @@ def video_scrapper(url,user,password_our):
     if (driver.execute_script("return document.getElementsByName('claim[relatedToEmployment]')[1].checked")):
         data["patient_employment"] = "no"
         
-
+    #new addition
     data["patient_relationship_to_insecured"] = "" 
     if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[0].checked")):
         data["patient_relationship_to_insecured"] = "self"
