@@ -6,6 +6,57 @@ import time
 import ast
 import json
 
+
+def payer_data(user,password_our):
+
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--headless')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.add_argument("window-size=1400,900")
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+   
+    url = "https://secure.simplepractice.com/clients"
+    driver.get(url)
+
+    username = driver.find_element_by_id('user_login')
+    username.send_keys(user)
+    password = driver.find_element_by_id('user_password')
+    password.send_keys(password_our)
+    form = driver.find_element_by_id('new_user')
+    form.submit()
+    main = []
+    counter = 1
+    while True:
+        driver.get("https://secure.simplepractice.com/frontend/insurance-plans? filter[search]=&filter[providerFilter]=search&include=insurancePayer,eligiblePayer,practicePayerAddresses,practiceInsurancePayers&page[number]={}&page[size]=50".format(counter))
+        counter = counter+1
+        a = json.loads(driver.find_element_by_tag_name("pre").text)
+        print(counter)
+        if len(a["data"]) ==0:
+            break
+        for x in a["data"]:
+            dictionary = {}
+            dictionary["id"] = str(x["attributes"]["insuranceProviderId"])
+            dictionary["payer_name"] = x["attributes"]["name"]
+            dictionary["payer_id"] = x["attributes"]["nameWithPayer"].split("(")[-1][:-1]
+            for j in a["included"]:
+                if j["type"] == "insurancePayers" and j["id"]==dictionary["id"]:
+                    try:
+                        dictionary["city"] = j["attributes"]["defaultAddress"]["city"]
+                        dictionary["address"] = j["attributes"]["defaultAddress"]["address"]
+                        dictionary["state"] = j["attributes"]["defaultAddress"]["state"]
+                    except:
+                        dictionary["city"] = ""
+                        dictionary["address"] = ""
+                        dictionary["state"] = ""
+                
+                    main.append(dictionary)
+                    break
+    return main
+    
+    
 def get_all_client(user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')

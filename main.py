@@ -1,6 +1,6 @@
 #fff
 from flask import Flask,request
-from working import video_scrapper,id_scrapper,unbilled_create,get_all_client
+from working import video_scrapper,id_scrapper,unbilled_create,get_all_client,payer_data
 from flask import jsonify
 app= Flask(__name__)
 app.debug = False
@@ -18,6 +18,21 @@ def clients_data():
 
 
 
+@app.route('/payer', methods=['POST'])
+def payer():
+
+  user = request.form["user"]
+  password = request.form["password"]
+  try:
+    data = payer_data(user,password)
+    data = {"data":data}
+    return jsonify(data)
+      
+  except:
+    return jsonify({"message":"Not correct data"})
+    
+    
+    
 @app.route('/data', methods=['POST'])
 def data():
 
@@ -29,11 +44,11 @@ def data():
   password = request.form["password"]
   url = "https://secure.simplepractice.com/clients/"+str(first_number)+"/insurance_claims/"+str(second_number)
   #return jsonify(video_scrapper(url,user,password))
-  #try:
-  return jsonify(video_scrapper(url,user,password))
+  try:
+    return jsonify(video_scrapper(url,user,password))
       
-  #except:
-  #    return jsonify({"message":"Not correct data"})
+  except:
+    return jsonify({"message":"Not correct data"})
       
       
       
