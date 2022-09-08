@@ -23,7 +23,10 @@ def payer():
 
   user = request.form["user"]
   password = request.form["password"]
-  count = request.form["start"]
+  try:
+    count = int(request.form["start"])
+  except:
+    return jsonify({"message":"count should be int"})
   #try:
   data = payer_data(user,password,count)
   data = {"data":data}
