@@ -7,7 +7,7 @@ import ast
 import json
 
 
-def payer_data(user,password_our):
+def payer_data(user,password_our,count):
 
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
@@ -28,8 +28,7 @@ def payer_data(user,password_our):
     form = driver.find_element_by_id('new_user')
     form.submit()
     main = []
-    counter = 1
-    while True:
+    for counter in range(count,count+10):
         driver.get("https://secure.simplepractice.com/frontend/insurance-plans? filter[search]=&filter[providerFilter]=search&include=insurancePayer,eligiblePayer,practicePayerAddresses,practiceInsurancePayers&page[number]={}&page[size]=50".format(counter))
         counter = counter+1
         a = json.loads(driver.find_element_by_tag_name("pre").text)
