@@ -27,13 +27,12 @@ def payer():
     count = int(request.form["start"])
   except:
     return jsonify({"message":"count should be int"})
-  #try:
-  data = payer_data(user,password,count)
-  data = {"data":data}
-  return jsonify(data)
-      
-  #except:
-  #  return jsonify({"message":"Not correct data"})
+  try:
+    data = payer_data(user,password,count)
+    data = {"data":data}
+    return jsonify(data)
+  except:
+    return jsonify({"message":"Not correct data"})
     
     
     
