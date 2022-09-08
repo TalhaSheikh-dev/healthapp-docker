@@ -24,13 +24,13 @@ def payer():
   user = request.form["user"]
   password = request.form["password"]
   count = request.form["start"]
-  try:
-    data = payer_data(user,password,count)
-    data = {"data":data}
-    return jsonify(data)
+  #try:
+  data = payer_data(user,password,count)
+  data = {"data":data}
+  return jsonify(data)
       
-  except:
-    return jsonify({"message":"Not correct data"})
+  #except:
+  #  return jsonify({"message":"Not correct data"})
     
     
     
