@@ -10,7 +10,7 @@ import json
 def payer_data(user,password_our,count):
 
     options = webdriver.ChromeOptions()
-    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-certificate-errors')	
     options.add_argument('--headless')
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
@@ -44,12 +44,14 @@ def payer_data(user,password_our,count):
                 if j["type"] == "insurancePayers" and j["id"]==dictionary["id"]:
                     try:
                         dictionary["city"] = j["attributes"]["defaultAddress"]["city"]
+                        dictionary["zipcode"] = j["attributes"]["defaultAddress"]["zipcode"]
                         dictionary["address"] = j["attributes"]["defaultAddress"]["address"]
                         dictionary["state"] = j["attributes"]["defaultAddress"]["state"]
                     except:
                         dictionary["city"] = ""
                         dictionary["address"] = ""
                         dictionary["state"] = ""
+                        dictionary["zipcode"] = ""
                 
                     main.append(dictionary)
                     break
