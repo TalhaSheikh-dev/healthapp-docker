@@ -1,4 +1,4 @@
-selenium
+selenium==4.2.0
 Flask==2.1.0
 gunicorn
 Werkzeug
