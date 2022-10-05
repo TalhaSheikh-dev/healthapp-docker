@@ -125,7 +125,14 @@ def unbilled_create(from_date,end_date,user,password_our):
     driver.find_element_by_name("daterangepicker_end").send_keys(end_date)
     driver.find_element_by_class_name("applyBtn").click()  
     time.sleep(5)
-    #driver.find_elements_by_css_selector("button.primary")[0].click() 
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
+
     a = driver.execute_script('return document.getElementsByClassName("button primary")')
     index = 0
     for i in range(len(a)):
