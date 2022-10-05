@@ -125,6 +125,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     driver.find_element_by_name("daterangepicker_end").send_keys(end_date)
     driver.find_element_by_class_name("applyBtn").click()  
     time.sleep(5)
+    last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(2)
