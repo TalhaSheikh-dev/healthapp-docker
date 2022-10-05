@@ -140,12 +140,12 @@ def unbilled_create(from_date,end_date,user,password_our):
             index = i 
             break
             
-    a = driver.execute_script('return document.getElementsByClassName("button primary")[{}].click()'.format(index))
-    time.sleep(5)
-    driver.execute_script('return document.getKElementsByClassName("item ember-view")[0].getElementsByTagName("button")[0].click()')
-    time.sleep(5)
-    driver.execute_script('return document.getElementsByClassName("swal2-confirm")[0].click()')
-
+    #a = driver.execute_script('return document.getElementsByClassName("button primary")[{}].click()'.format(index))
+    #time.sleep(5)
+    #driver.execute_script('return document.getKElementsByClassName("item ember-view")[0].getElementsByTagName("button")[0].click()')
+    #time.sleep(5)
+    #driver.execute_script('return document.getElementsByClassName("swal2-confirm")[0].click()')
+    return last_height
     
 def id_scrapper(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
