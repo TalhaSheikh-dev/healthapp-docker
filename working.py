@@ -114,8 +114,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     options.add_argument("window-size=1400,900")
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
-    url = "https://secure.simplepractice.com/users/sign_in"
-    driver.get(url)
+    driver.get("https://secure.simplepractice.com/users/sign_in")
     
   
     username = driver.find_element_by_id('user_login')
@@ -128,17 +127,27 @@ def unbilled_create(from_date,end_date,user,password_our):
     token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
     time.sleep(5)
     
-    all_cookies=driver.get_cookies();
-    check = ["_ga","_gid","_fbp","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
-    cookies_dict = {}
     
-    for cookie in all_cookies:
-        
-        cookies_dict[cookie['name']]=cookie['value']
-    string = ""
-    for i in check:
-        string = string + i+"="+cookies_dict[i]+"; "
-    string = string.strip("; ")
+    check = ["_ga","_gid","_fbp","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
+    try:
+        all_cookies=driver.get_cookies();
+        cookies_dict = {}    
+        for cookie in all_cookies:
+            cookies_dict[cookie['name']]=cookie['value']
+        string = ""
+        for i in check:
+            string = string + i+"="+cookies_dict[i]+"; "
+        string = string.strip("; ")
+    except:
+        all_cookies=driver.get_cookies();
+        cookies_dict = {}    
+        for cookie in all_cookies:
+            cookies_dict[cookie['name']]=cookie['value']
+        string = ""
+        for i in check:
+            string = string + i+"="+cookies_dict[i]+"; "
+        string = string.strip("; ")
+            
     header = {
         "user-agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
         "x-csrf-token":token,
@@ -171,7 +180,7 @@ def unbilled_create(from_date,end_date,user,password_our):
 
     payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False})    
     r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
-    return r
+    
     
 def id_scrapper(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
