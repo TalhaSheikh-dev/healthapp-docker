@@ -93,8 +93,19 @@ def get_all_client(user,password_our):
         i = i+1
     return full
     
+
+def convert_date(date):
+    splitter = date.split("/")
+    mm = splitter[0]
+    dd = splitter[1]
+    yyyy = splitter[2]
     
+    return yyyy+"-"+mm+"-"+dd
 def unbilled_create(from_date,end_date,user,password_our):
+    from_date = convert_date(from_date)
+    end_date = convert_date(end_date)
+    url = '''https://secure.simplepractice.com/frontend/insured-clients?fields[clients]=hashedId,preferredName&filter[endDate]={}&filter[startDate]={}&include=unbilledAppointments,client,insurancePlan&page[number]={}&page[size]=50'''
+    
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
@@ -103,7 +114,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     options.add_argument("window-size=1400,900")
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
-    url = "https://secure.simplepractice.com/billings/insurance"
+    url = "https://secure.simplepractice.com/users/sign_in"
     driver.get(url)
     
   
@@ -114,39 +125,53 @@ def unbilled_create(from_date,end_date,user,password_our):
     form = driver.find_element_by_id('new_user')
     form.submit()
 
-    #driver.get(url+"#claims")
-
-    #driver.find_elements_by_css_selector("button.ghost-secondary.filtered")[0].click()
+    token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
     time.sleep(5)
-    driver.execute_script('return document.getElementsByClassName("button ghost-secondary filtered")[0].click()')
-    driver.find_element_by_name("daterangepicker_start").clear()
-    driver.find_element_by_name("daterangepicker_start").send_keys(from_date)
-    driver.find_element_by_name("daterangepicker_end").clear()
-    driver.find_element_by_name("daterangepicker_end").send_keys(end_date)
-    driver.find_element_by_class_name("applyBtn").click()  
-    time.sleep(5)
-    last_height = driver.execute_script("return document.body.scrollHeight")
+    
+    all_cookies=driver.get_cookies();
+    check = ["_ga","_gid","_fbp","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
+    cookies_dict = {}
+    
+    for cookie in all_cookies:
+        
+        cookies_dict[cookie['name']]=cookie['value']
+    string = ""
+    for i in check:
+        string = string + i+"="+cookies_dict[i]+"; "
+    string = string.strip("; ")
+    header = {
+        "user-agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
+        "x-csrf-token":token,
+        "accept":"application/vnd.api+json",
+        "content-type":"application/vnd.api+json",
+        "origin":"https://secure.simplepractice.com",
+        "referer":"https://secure.simplepractice.com/clients/29aef6cf67198727/overview",
+        "cookie":string
+    }
+    page_no = 1
+    all_ids = []
     while True:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(3)
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
-
-    a = driver.execute_script('return document.getElementsByClassName("button primary")')
-    index = 0
-    for i in range(len(a)):
-        if a[i].text == "Create":
-            index = i 
+        loop_ids = []
+        url_new = url.format(end_date,from_date,page_no)
+        driver.get(url)
+        json_data = json.loads(driver.find_element(By.CSS_SELECTOR,'pre').text)["data"]
+        
+        for x in json_data:
+            if x["attributes"]["missingInsuranceData"] == "":
+                loop_ids.append(x["relationships"]["unbilledAppointments"]["data"][0]["id"]) 
+        
+        if len(json_data) == 50:
+            page_no = page_no+1
+            all_ids = all_ids + loop_ids
+            continue
+        else:
+            all_ids = all_ids + loop_ids
             break
             
-    a = driver.execute_script('return document.getElementsByClassName("button primary")[{}].click()'.format(index))
-    time.sleep(3)
-    driver.execute_script('return document.getKElementsByClassName("item ember-view")[0].getElementsByTagName("button")[0].click()')
-    time.sleep(3)
-    driver.execute_script('return document.getElementsByClassName("swal2-confirm")[0].click()')
-    #return last_height
+
+    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False})    
+    r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
+    return r
     
 def id_scrapper(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
