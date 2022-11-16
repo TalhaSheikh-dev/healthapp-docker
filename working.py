@@ -162,7 +162,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     while True:
         loop_ids = []
         url_new = url.format(end_date,from_date,page_no)
-        driver.get(url)
+        driver.get(url_new)
         json_data = json.loads(driver.find_element(By.CSS_SELECTOR,'pre').text)["data"]
         
         for x in json_data:
