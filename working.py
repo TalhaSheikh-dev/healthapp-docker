@@ -103,6 +103,7 @@ def convert_date(date):
     
     return yyyy+"-"+mm+"-"+dd
 def unbilled_create(from_date,end_date,user,password_our):
+
     from_date = convert_date(from_date)
     end_date = convert_date(end_date)
     url = '''https://secure.simplepractice.com/frontend/insured-clients?fields[clients]=hashedId,preferredName&filter[endDate]={}&filter[startDate]={}&include=unbilledAppointments,client,insurancePlan&page[number]={}&page[size]=50'''
@@ -126,7 +127,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     form.submit()
 
     token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
-    time.sleep(5)
+    time.sleep(7)
     
     
     check = ["_ga","_gid","_fbp","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
@@ -140,6 +141,7 @@ def unbilled_create(from_date,end_date,user,password_our):
             string = string + i+"="+cookies_dict[i]+"; "
         string = string.strip("; ")
     except:
+        time.sleep(2)
         all_cookies=driver.get_cookies();
         cookies_dict = {}    
         for cookie in all_cookies:
