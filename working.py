@@ -133,7 +133,6 @@ def unbilled_create(from_date,end_date,user,password_our):
     check = ["_ga","_gid","_fbp","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
     try:
         all_cookies=driver.get_cookies();
-        print(all_cookies)
         cookies_dict = {}    
         for cookie in all_cookies:
             cookies_dict[cookie['name']]=cookie['value']
@@ -142,7 +141,7 @@ def unbilled_create(from_date,end_date,user,password_our):
             string = string + i+"="+cookies_dict[i]+"; "
         string = string.strip("; ")
     except:
-        time.sleep(4)
+        time.sleep(2)
         all_cookies=driver.get_cookies();
         cookies_dict = {}    
         for cookie in all_cookies:
@@ -150,10 +149,8 @@ def unbilled_create(from_date,end_date,user,password_our):
             
         string = ""
         for i in check:
-            try:    
-                string = string + i+"="+cookies_dict[i]+"; "
-            except:
-                pass
+            string = string + i+"="+cookies_dict[i]+"; "
+            
         string = string.strip("; ")
             
     header = {
