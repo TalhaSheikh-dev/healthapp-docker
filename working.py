@@ -145,7 +145,10 @@ def unbilled_create(from_date,end_date,user,password_our):
         all_cookies=driver.get_cookies();
         cookies_dict = {}    
         for cookie in all_cookies:
-            cookies_dict[cookie['name']]=cookie['value']
+            try:
+                cookies_dict[cookie['name']]=cookie['value']
+            except:
+                pass
         string = ""
         for i in check:
             string = string + i+"="+cookies_dict[i]+"; "
