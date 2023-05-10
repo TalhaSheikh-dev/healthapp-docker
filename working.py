@@ -149,8 +149,7 @@ def unbilled_create(from_date,end_date,user,password_our):
             
         string = ""
         for i in check:
-            string = string + i+"="+cookies_dict[i]+"; "
-            
+            string = string + i+"="+cookies_dict[i]+"; "            
         string = string.strip("; ")
             
     header = {

@@ -5,15 +5,21 @@ from flask import jsonify
 app= Flask(__name__)
 app.debug = False
 
+@app.route('/health', methods=['POST'])
+def health():
+  return jsonify("successful")
+      
+
+
+
 @app.route('/clients', methods=['POST'])
 def clients_data():
   user = request.form["user"]
   password = request.form["password"]
-  #try:
-  return jsonify(get_all_client(user,password))
-      
-  #except:
-  #    return jsonify({"message":"Not correct data"})
+  try:
+      return jsonify(get_all_client(user,password))
+  except:
+      return jsonify({"message":"Not correct data"})
       
 
 
@@ -74,12 +80,11 @@ def unbill():
   user = request.form["user"]
   password = request.form["password"]
 
-  #try:
-  if True:
+  try:
       unbilled_create(from_date,end_date,user,password)
       return jsonify({"message":"successfull"})
-  #except:
-      #return jsonify({"message":"Unable to create unbilled"})
+  except:
+      return jsonify({"message":"Unable to create unbilled"})
   
       
 if __name__ == '__main__':
