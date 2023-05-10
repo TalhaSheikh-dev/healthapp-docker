@@ -16,10 +16,11 @@ def health():
 def clients_data():
   user = request.form["user"]
   password = request.form["password"]
-  try:
+  #try:
+  if True:
       return jsonify(get_all_client(user,password))
-  except:
-      return jsonify({"message":"Not correct data"})
+  #except:
+      #return jsonify({"message":"Not correct data"})
       
 
 
@@ -80,11 +81,12 @@ def unbill():
   user = request.form["user"]
   password = request.form["password"]
 
-  try:
+  #try:
+  if True:
       unbilled_create(from_date,end_date,user,password)
       return jsonify({"message":"successfull"})
-  except:
-      return jsonify({"message":"Unable to create unbilled"})
+  #except:
+      #return jsonify({"message":"Unable to create unbilled"})
   
       
 if __name__ == '__main__':
