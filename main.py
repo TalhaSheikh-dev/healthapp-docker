@@ -19,7 +19,7 @@ def therapynotes_claims():
   end = request.form["end"]      
   #try:
   if True:
-      return therapynotes_claims_data(code,user,password,start,end)
+      return jsonify(therapynotes_claims_data(code,user,password,start,end))
   #except:
       #return jsonify({"message":"Not correct data"})
       
