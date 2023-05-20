@@ -12,14 +12,14 @@ def health():
 
 @app.route('/tn-claims', methods=['POST'])
 def therapynotes_claims():
-  code = = request.form["code"]
+  code = request.form["code"]
   user = request.form["user"]
   password = request.form["password"]
   start = request.form["start"]
   end = request.form["end"]      
   #try:
   if True:
-      return jsonify(therapynotes_claims_data(code,user,password,start,end))
+      return therapynotes_claims_data(code,user,password,start,end)
   #except:
       #return jsonify({"message":"Not correct data"})
       
