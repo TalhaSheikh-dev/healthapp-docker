@@ -7,7 +7,103 @@ import ast
 import json
 from selenium.webdriver.common.by import By
 import requests
+import pandas as pd
+import json
+import numpy as np
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
+rename_dict = {'Date':'claim_serviceLines_0_serviceDateFrom',
+       'Service Code':'claimserviceLines_0_procedureCode', 'POS':'claimserviceLines_0_placeOfService', 'Units':'claimserviceLines_0_units', 'Last Name':'patient_lastName',
+       'First Name':'patient_firstName', 'DOB':'patient_dob', 'Patient Member ID':'insured_id',
+       'Clinician NPI':'claimserviceLines_0_renderingProvidernpi',
+       'Primary Insurer Name':'payer_name',
+       'Primary Diagnosis':'icdA','Rate':'claimserviceLines_0_chargeAmount',
+       'Modifier Code 1':'claim_serviceLines_0_procedureModifiers_0', 'Modifier Code 2':'claim_serviceLines_0_procedureModifiers_1',
+       'Modifier Code 3':'claim_serviceLines_0_procedureModifiers_2', 'Modifier Code 4':'claim_serviceLines_0_procedureModifiers_3'}
+
+
+
+drop_columns = ['Type','Appointment Type','Billing Method','Payment Type','Service Description','Clinician Type','Bill as Supervisor','Supervisor Name','Supervisor NPI','Location',
+               'Primary Insurer Group', 'In Network', 'Secondary Insurer Name','Secondary Insurer Group', 'Note Status',
+               'Payment Assigned to Practice' , 'Patient Amount Due','Patient Amount Paid', 'Patient Unassigned Credit',
+               'Patient Balance Status', 'Insurance Amount Due','Insurance Amount Paid', 'Insurance Unassigned Credit','Insurance Balance Status',
+               'Documents Created', 'Comments','Clinician Name'
+               ]
+
+
+
+all_columns = ['claim_serviceLines_3_Diagnose_pointer', 'claimserviceLines_3_procedureCode', 'claimserviceLines_1_units', 'patient_streetLine1', 'patient_telephone', 'claimserviceLines_1_placeOfService', 'claim_serviceLines_4_procedureModifiers_0', 'icdI', 'claim_serviceLines_1_serviceDateTo', 'claimserviceLines_5_placeOfService', 'claimserviceLines_2_procedureCode', 'claimserviceLines_2_placeOfService', 'claim_serviceLines_4_procedureModifiers_1', 'claim_serviceLines_4_serviceDateFrom', 'patient_city', 'claimserviceLines_2_chargeAmount', 'icdB', 'claim_serviceLines_4_serviceDateTo', 'claimserviceLines_5_procedureCode', 'claim_serviceLines_5_serviceDateFrom', 'claim_serviceLines_1_procedureModifiers_0', 'claim_serviceLines_3_procedureModifiers_0', 'claimserviceLines_4_placeOfService', 'claim_serviceLines_3_serviceDateTo', 'claim_serviceLines_3_serviceDateFrom', 'claim_serviceLines_0_serviceDateTo', 'claim_serviceLines_2_Diagnose_pointer', 'claim_serviceLines_5_serviceDateTo', 'claimserviceLines_1_procedureCode', 'claimserviceLines_3_placeOfService', 'claimserviceLines_1_chargeAmount', 'claim_serviceLines_4_procedureModifiers_2', 'claim_serviceLines_1_Diagnose_pointer', 'claim_serviceLines_1_procedureModifiers_2', 'icdL', 'patient_zip', 'claim_serviceLines_2_procedureModifiers_3', 'icdJ', 'claim_serviceLines_2_serviceDateTo', 'claim_serviceLines_5_Diagnose_pointer', 'claim_serviceLines_2_procedureModifiers_0', 'claimserviceLines_5_units', 'icdK', 'claim_serviceLines_3_procedureModifiers_3', 'claim_serviceLines_2_procedureModifiers_1', 'payer_id', 'claimserviceLines_5_chargeAmount', 'icdH', 'icdD', 'claim_serviceLines_5_procedureModifiers_3', 'claim_serviceLines_5_procedureModifiers_1', 'claim_serviceLines_1_serviceDateFrom', 'patient_state', 'claimserviceLines_3_chargeAmount', 'claimserviceLines_4_chargeAmount', 'claim_serviceLines_1_procedureModifiers_3', 'claimserviceLines_3_units', 'claim_serviceLines_4_procedureModifiers_3', 'patient_middleName', 'claim_serviceLines_0_Diagnose_pointer', 'claim_serviceLines_3_procedureModifiers_2', 'claim_serviceLines_2_procedureModifiers_2', 'claimserviceLines_2_units', 'claim_serviceLines_3_procedureModifiers_1', 'patient_gender', 'claimserviceLines_4_units', 'claim_serviceLines_4_Diagnose_pointer', 'icdF', 'claim_serviceLines_2_serviceDateFrom', 'icdC', 'claim_serviceLines_5_procedureModifiers_0', 'claimserviceLines_4_procedureCode', 'claim_serviceLines_1_procedureModifiers_1', 'claim_serviceLines_5_procedureModifiers_2', 'icdE', 'patient_streetLine2', 'icdG']
+
+def process_date(date):
+    year,month,day = date.split("-")
+    month = month.lstrip("0")
+    day = day.lstrip("0")
+    return month,day,year
+    
+def process_df(df):
+
+    length = len(df)
+    print(df.info())
+    df = df.drop(drop_columns, axis=1)
+    df['Service Code'] = df['Service Code'].fillna(-1).astype(int).astype(str).replace("-1","")
+    df['Clinician NPI'] = df['Clinician NPI'].fillna(-1).astype(np.int64).astype(str).replace("-1","")
+    print(df['Clinician NPI'])
+    df['Rate'] = df['Rate'].astype(float, errors='ignore') 
+    df = (df.replace(r'^\s*$', np.nan, regex=True))
+    df.rename(columns = rename_dict, inplace = True)
+    df["claim_serviceLines_0_serviceDateFrom"] = df["claim_serviceLines_0_serviceDateFrom"].dt.strftime('%Y-%m-%d')
+    df["patient_dob"] =  pd.to_datetime(df["patient_dob"], infer_datetime_format=True)
+    df["patient_dob"] = df["patient_dob"].dt.strftime('%Y-%m-%d')
+    df["Date"] = df["claim_serviceLines_0_serviceDateFrom"]
+    for i in all_columns:
+        df[i] = [np.nan]*length
+
+    return df.to_json(orient="records") 
+
+def therapynotes_claims_data(code, user_name,pass_word, date_start,date_end):
+    
+    s_m,s_d,s_y = process_date(date_start)
+    e_m,e_d,e_y = process_date(date_end)
+
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-certificate-errors')	
+    options.add_argument('--headless')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.add_argument("window-size=1400,900")
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    prefs = {"download.default_directory" : dir_path}
+    options.add_experimental_option("prefs",prefs)   
+    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+       
+    url = f"https://www.therapynotes.com/app/login/{code}/"
+    driver.get(url)
+    time.sleep(2)
+    username = driver.find_element(By.ID,'Login__UsernameField')
+    username.send_keys(user_name)
+    password = driver.find_element(By.ID,'Login__Password')
+    password.send_keys(pass_word)
+    form = driver.find_element(By.ID,'Login__LogInButton')
+    form.submit()
+    url_to_hit = f"https://www.therapynotes.com/app/billing/#StatementPayments=false&StatementDirectPayments=false&StatementInNetworkInsurancePayments=false&StatementOutOfNetworkInsurancePayments=false&StatementMinimumDate={s_m}%2f{s_d}%2f{s_y}&StatementMaximumDate={e_m}%2f{e_d}%2f{e_y}&StatementFilterMaximumDate={e_m}%2f{e_d}%2f{e_y}"
+    time.sleep(2)
+    driver.get(url_to_hit)
+    time.sleep(2)
+    driver.find_element(By.XPATH,"/html/body/form/div[5]/div/main/div[2]/div/div[3]/div/div[2]/div/div/div[1]/a").click();
+    time.sleep(2)
+    out = driver.find_element(By.XPATH,"/html/body/form/div[3]/div/div/div/div/a").get_attribute("href")
+    driver.get(out)  
+    time.sleep(2)  
+    
+    files = os.listdir(dir_path)
+    file_to = [x for x in files if x.endswith("xlsx")]
+    df_path = os.path.join(dir_path,file_to[0])
+    df = pd.read_excel(df_path)[:5]
+    output = process_df(df)
+    os.remove(df_path) 
+    return output 
+    
+           
 def payer_data(user,password_our,count):
 
     options = webdriver.ChromeOptions()

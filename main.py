@@ -1,6 +1,6 @@
 
 from flask import Flask,request
-from working import video_scrapper,id_scrapper,unbilled_create,get_all_client,payer_data
+from working import *
 from flask import jsonify
 app= Flask(__name__)
 app.debug = False
@@ -10,7 +10,19 @@ def health():
   return jsonify("successful")
       
 
-
+@app.route('/tn-claims', methods=['POST'])
+def therapynotes_claims():
+  code = = request.form["code"]
+  user = request.form["user"]
+  password = request.form["password"]
+  start = request.form["start"]
+  end = request.form["end"]      
+  #try:
+  if True:
+      return jsonify(therapynotes_claims_data(code,user,password,start,end))
+  #except:
+      #return jsonify({"message":"Not correct data"})
+      
 
 @app.route('/clients', methods=['POST'])
 def clients_data():
