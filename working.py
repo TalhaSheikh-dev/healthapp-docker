@@ -118,17 +118,17 @@ def payer_data(user,password_our,count):
     url = "https://secure.simplepractice.com/clients"
     driver.get(url)
 
-    username = driver.find_element_by_id('user_login')
+    username = driver.find_element(By.ID,'user_login')
     username.send_keys(user)
-    password = driver.find_element_by_id('user_password')
+    password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element_by_id('new_user')
+    form = driver.find_element(By.ID,'new_user')
     form.submit()
     main = []
     for counter in range(count,count+10):
         driver.get("https://secure.simplepractice.com/frontend/insurance-plans? filter[search]=&filter[providerFilter]=search&include=insurancePayer,eligiblePayer,practicePayerAddresses,practiceInsurancePayers&page[number]={}&page[size]=50".format(counter))
         counter = counter+1
-        a = json.loads(driver.find_element_by_tag_name("pre").text)
+        a = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
         print(counter)
         if len(a["data"]) ==0:
             break
@@ -215,11 +215,11 @@ def unbilled_create(from_date,end_date,user,password_our):
     driver.get("https://secure.simplepractice.com/users/sign_in")
     
   
-    username = driver.find_element_by_id('user_login')
+    username = driver.find_element(By.ID,'user_login')
     username.send_keys(user)
-    password = driver.find_element_by_id('user_password')
+    password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element_by_id('new_user')
+    form = driver.find_element(By.ID,'new_user')
     form.submit()
 
     token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
@@ -293,18 +293,19 @@ def id_scrapper(from_date,end_date,status,user,password_our):
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     url = "https://secure.simplepractice.com/billings/insurance/claims?endDate={}&startDate={}&status={}".format(end_date,from_date,status)
     driver.get(url)
-    username = driver.find_element_by_id('user_login')
+
+    username = driver.find_element(By.ID,'user_login')
     username.send_keys(user)
-    password = driver.find_element_by_id('user_password')
+    password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element_by_id('new_user')
-    form.submit()    
+    form = driver.find_element(By.ID,'new_user')
+    form.submit()
     
     all_data = []
-    elems = driver.find_elements_by_tag_name('tr')
+    elems = driver.find_elements(By.TAG_NAME,'tr')
     for elem in elems:
         try:
-            href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
+            href = elem.find_elements(By.TAG_NAME,'td')[-1].find_elements(By.TAG_NAME,'a')[0].get_attribute('href')
             first = href.split("/")[-3]
             second = href.split("/")[-1]
             dicti = {"first_id":first,"second_id":second}
@@ -317,10 +318,10 @@ def id_scrapper(from_date,end_date,status,user,password_our):
     while(match==False):
         lastCount = lenOfPage
 
-        elems = driver.find_elements_by_tag_name('tr')
+        elems = driver.find_elements(By.TAG_NAME,'tr')
         for elem in elems:
             try:
-                href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
+                href = elem.find_elements(By.TAG_NAME,'td')[-1].find_elements(By.TAG_NAME,'a')[0].get_attribute('href')
                 first = href.split("/")[-3]
                 second = href.split("/")[-1]
                 dicti = {"first_id":first,"second_id":second}
@@ -331,10 +332,10 @@ def id_scrapper(from_date,end_date,status,user,password_our):
         lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
         if lastCount==lenOfPage:
             match=True
-    elems = driver.find_elements_by_tag_name('tr')
+    elems = driver.find_elements(By.TAG_NAME,'tr')
     for elem in elems:
         try:
-            href = elem.find_elements_by_tag_name('td')[-1].find_elements_by_tag_name('a')[0].get_attribute('href')
+            href = elem.find_elements(By.TAG_NAME,'td')[-1].find_elements(By.TAG_NAME,'a')[0].get_attribute('href')
             first = href.split("/")[-3]
             second = href.split("/")[-1]
             dicti = {"first_id":first,"second_id":second}
@@ -358,27 +359,26 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     driver.get(url)
     
   
-    username = driver.find_element_by_id('user_login')
+    username = driver.find_element(By.ID,'user_login')
     username.send_keys(user)
-    password = driver.find_element_by_id('user_password')
+    password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element_by_id('new_user')
+    form = driver.find_element(By.ID,'new_user')
     form.submit()
-
 
     
     
     driver.get(url+"#claims")
     time.sleep(2)
-    driver.find_element_by_xpath("//input[@id='insurance-claims-daterangepicker']").click()
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").clear()
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").send_keys(from_date)
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
+    driver.find_element(By.XPATH,"//input[@id='insurance-claims-daterangepicker']").click()
+    driver.find_element(By.XPATH,"/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").clear()
+    driver.find_element(By.XPATH,"/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[1]/input").send_keys(from_date)
+    driver.find_element(By.XPATH,"/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").clear()
+    driver.find_element(By.XPATH,"/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/div[2]/input").send_keys(end_date)
     time.sleep(2)
-    driver.find_element_by_xpath("/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
+    driver.find_element(By.XPATH,"/html/body/div[1]/div[3]/div/div/div/div[2]/div/div[3]/div/div[2]/div[1]/form/div/div[2]/div/div/div[3]/div/button[1]").click()  
     time.sleep(5)
-    elems = driver.find_elements_by_xpath("//a[@data-page]")
+    elems = driver.find_elements(By.XPATH,"//a[@data-page]")
 
     try:
         value_all = max([int(x.get_attribute("data-page")) for x in elems])
@@ -386,20 +386,20 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
         our_number = 5
         while int(number_page) >our_number:
             string = '//a[@data-page="'+str(our_number)+'"]'
-            driver.find_element_by_xpath(string).click()
+            driver.find_element(By.XPATH,string).click()
             our_number = our_number+4
             time.sleep(2)
     
     
         string = '//a[@data-page="'+str(number_page)+'"]'
-        driver.find_element_by_xpath(string).click()
+        driver.find_element(By.XPATH,string).click()
     except:
         value_all =1
 
         
     time.sleep(2)
     all_data = []
-    elems = driver.find_elements_by_tag_name('tr')
+    elems = driver.find_elements(By.TAG_NAME,'tr')
     for elem in elems:
         try:
             href = elem.get_attribute('data-url')
@@ -421,13 +421,11 @@ def video_scrapper(url,user,password_our):
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     x = driver.get(url)
     
-    username = driver.find_element_by_id('user_login')
-    #username.send_keys('george_gina4med')
+    username = driver.find_element(By.ID,'user_login')
     username.send_keys(user)
-    password = driver.find_element_by_id('user_password')
-    #password.send_keys('Akoznaeh#88')
+    password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element_by_id('new_user')
+    form = driver.find_element(By.ID,'new_user')
     form.submit()
 
     data = {}
