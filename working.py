@@ -181,9 +181,7 @@ def get_all_client(user,password_our):
     i = 1
     while True:
         response = driver.get(url+str(i)+url_2)
-        time.sleep(2)
         json_data = driver.find_element(By.TAG_NAME,"body").text
-        time.sleep(1)
         json_data = json.loads(json_data)["data"]
         if len(json_data) == 0:
             break
