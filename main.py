@@ -65,9 +65,8 @@ def data():
   user = request.form["user"]
   password = request.form["password"]
   url = "https://secure.simplepractice.com/clients/"+str(first_number)+"/insurance_claims/"+str(second_number)
-  #return jsonify(video_scrapper(url,user,password))
   try:
-    return jsonify(video_scrapper(url,user,password))
+    return jsonify(video_get(url,user,password))
       
   except:
     return jsonify({"message":"Not correct data"})
@@ -83,7 +82,7 @@ def claims():
   password = request.form["password"]
   status = request.form["status"]
   data = ""
-  return jsonify({"all_claims_id":id_scrapper(from_date,end_date,status,user,password)})
+  return jsonify({"all_claims_id":id_get(from_date,end_date,status,user,password)})
   
 @app.route('/unbill', methods=['POST'])
 def unbill():

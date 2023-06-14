@@ -43,7 +43,6 @@ def process_date(date):
 def process_df(df):
 
     length = len(df)
-    print(df.info())
     df = df.drop(drop_columns, axis=1)
     df['Service Code'] = df['Service Code'].fillna(-1).astype(int).astype(str).replace("-1","")
     df['Clinician NPI'] = df['Clinician NPI'].fillna(-1).astype(np.int64).astype(str).replace("-1","")
@@ -282,7 +281,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
     
     
-def id_scrapper(from_date,end_date,status,user,password_our):
+def id_get(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
@@ -346,7 +345,7 @@ def id_scrapper(from_date,end_date,status,user,password_our):
     all_data = ([dict(y) for y in set(tuple(x.items()) for x in all_data)])
     return all_data
     
-def id_scrapper_page(from_date,end_date,number_page,user,password_our):
+def id_get_page(from_date,end_date,number_page,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
@@ -410,7 +409,7 @@ def id_scrapper_page(from_date,end_date,number_page,user,password_our):
     return all_data,value_all
 
 get_letter = {0:"A",1:"B",2:"C",3:"D",4:"E",5:"F",6:"G",7:"H",8:"I",9:"J",10:"K",11:"L"}
-def video_scrapper(url,user,password_our):
+def video_get(url,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
