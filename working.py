@@ -222,8 +222,8 @@ def unbilled_create(from_date,end_date,user,password_our):
     token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
     time.sleep(7)
     
-    
-    check = ["_ga","_gid","_fbp","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
+    #_fbp
+    check = ["_ga","_gid","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
     try:
         all_cookies=driver.get_cookies();
         cookies_dict = {}    
