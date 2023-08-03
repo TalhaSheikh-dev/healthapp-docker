@@ -264,7 +264,8 @@ def unbilled_create(from_date,end_date,user,password_our):
         
         for x in json_data:
             if x["attributes"]["missingInsuranceData"] == "":
-                loop_ids.append(x["relationships"]["unbilledAppointments"]["data"][0]["id"]) 
+                for y in x["relationships"]["unbilledAppointments"]["data"]:
+                    loop_ids.append(y["id"])
         
         if len(json_data) == 50:
             page_no = page_no+1
