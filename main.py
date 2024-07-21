@@ -57,8 +57,6 @@ def payer():
     
 @app.route('/data', methods=['POST'])
 def data():
-
-  
   user = ""
   first_number = request.form["first_number"]
   second_number = request.form["second_number"]

@@ -287,8 +287,9 @@ def id_get(from_date,end_date,status,user,password_our):
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
     options.add_argument("window-size=1400,900")
-    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+    # options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    # driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+    driver = webdriver.Chrome()
     url = "https://secure.simplepractice.com/billings/insurance/claims?endDate={}&startDate={}&status={}".format(end_date,from_date,status)
     driver.get(url)
 
@@ -300,50 +301,22 @@ def id_get(from_date,end_date,status,user,password_our):
     form.submit()
     
     all_data = []
-    elems = driver.find_elements(By.TAG_NAME,'tr')
-    for elem in elems:
-        try:
-            href = elem.find_elements(By.TAG_NAME,'td')[-1].find_elements(By.TAG_NAME,'a')[0].get_attribute('href')
-            first = href.split("/")[-3]
-            second = href.split("/")[-1]
-            dicti = {"first_id":first,"second_id":second}
-            all_data.append(dicti)
-
-        except:
-            pass
-    lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
-    match=False
-    while(match==False):
-        lastCount = lenOfPage
-
-        elems = driver.find_elements(By.TAG_NAME,'tr')
-        for elem in elems:
-            try:
-                href = elem.find_elements(By.TAG_NAME,'td')[-1].find_elements(By.TAG_NAME,'a')[0].get_attribute('href')
-                first = href.split("/")[-3]
-                second = href.split("/")[-1]
-                dicti = {"first_id":first,"second_id":second}
-                all_data.append(dicti)
-
-            except:
-                pass
-        lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
-        if lastCount==lenOfPage:
-            match=True
-    elems = driver.find_elements(By.TAG_NAME,'tr')
-    for elem in elems:
-        try:
-            href = elem.find_elements(By.TAG_NAME,'td')[-1].find_elements(By.TAG_NAME,'a')[0].get_attribute('href')
-            first = href.split("/")[-3]
-            second = href.split("/")[-1]
-            dicti = {"first_id":first,"second_id":second}
-            all_data.append(dicti)
-
-        except:
-            pass
-    all_data = ([dict(y) for y in set(tuple(x.items()) for x in all_data)])
-    return all_data
+    page = 1
     
+    while True:
+        url = f'https://secure.simplepractice.com/frontend/insurance-claims?fields%5BinsuranceClaims%5D=hasPendingStatus%2CclaimSubmittedDate%2Cclient%2CinsurancePlan%2CcreatedAt%2Cstatus%2CcurrentSubmission&fields%5Bclients%5D=hashedId%2CpreferredName&fields%5BinsurancePlans%5D=name&fields%5BclaimSubmissions%5D=clearinghouse%2CadditionalInformation&filter%5BclientHashedId%5D=&filter%5BinsurancePayerId%5D=&filter%5Bstatus%5D=prepared&filter%5BtimeRange%5D={from_date}T05%3A00%3A00.000Z%2C{end_date}T04%3A59%3A59.999Z&filter%5BincludeClaimData%5D=false&filter%5BincludeOutOfNetwork%5D=false&include=client%2CinsurancePlan%2CcurrentSubmission&page%5Bnumber%5D={page}&page%5Bsize%5D=50&sort=priority%2C-createdDate%2Cclients.lastName%2Cclients.firstName'
+
+        driver.get(url)
+        data = json.loads(driver.find_element(By.TAG_NAME,"pre").text)["data"]
+        all_data  = all_data+data
+        if len(data) <50:
+            break
+        else:
+            page = page+1
+        
+    return all_data
+
+
 def id_get_page(from_date,end_date,number_page,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
