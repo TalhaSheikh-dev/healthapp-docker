@@ -330,10 +330,16 @@ def id_get(from_date,end_date,status,user,password_our):
         data = full["data"]
         included = full["included"]
 
-        for x in range(len(data)):
+        for x in data:
             new_dict = {}
-            new_dict["first_id"] = included[x]["attributes"]["hashedId"]
-            new_dict["second_id"] = (data[x]["id"])
+            second_id = (x["id"])
+            new_dict["second_id"] = second_id
+            match_id = x["relationships"]["client"]["data"]["id"]
+            for y in included:
+                if y["id"] == match_id:
+                    new_dict["first_id"] = y["attributes"]["hashedId"]
+                    break
+            
             all_data.append(new_dict)
         if len(data) <50:
             break
