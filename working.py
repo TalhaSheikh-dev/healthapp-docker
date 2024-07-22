@@ -8,6 +8,8 @@ import requests
 import pandas as pd
 import json
 import numpy as np
+from datetime import datetime, timedelta
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 rename_dict = {'Date':'claim_serviceLines_0_serviceDateFrom',
@@ -31,6 +33,22 @@ drop_columns = ['Type','Appointment Type','Billing Method','Payment Type','Servi
 
 
 all_columns = ['claim_serviceLines_3_Diagnose_pointer', 'claimserviceLines_3_procedureCode', 'claimserviceLines_1_units', 'patient_streetLine1', 'patient_telephone', 'claimserviceLines_1_placeOfService', 'claim_serviceLines_4_procedureModifiers_0', 'icdI', 'claim_serviceLines_1_serviceDateTo', 'claimserviceLines_5_placeOfService', 'claimserviceLines_2_procedureCode', 'claimserviceLines_2_placeOfService', 'claim_serviceLines_4_procedureModifiers_1', 'claim_serviceLines_4_serviceDateFrom', 'patient_city', 'claimserviceLines_2_chargeAmount', 'icdB', 'claim_serviceLines_4_serviceDateTo', 'claimserviceLines_5_procedureCode', 'claim_serviceLines_5_serviceDateFrom', 'claim_serviceLines_1_procedureModifiers_0', 'claim_serviceLines_3_procedureModifiers_0', 'claimserviceLines_4_placeOfService', 'claim_serviceLines_3_serviceDateTo', 'claim_serviceLines_3_serviceDateFrom', 'claim_serviceLines_0_serviceDateTo', 'claim_serviceLines_2_Diagnose_pointer', 'claim_serviceLines_5_serviceDateTo', 'claimserviceLines_1_procedureCode', 'claimserviceLines_3_placeOfService', 'claimserviceLines_1_chargeAmount', 'claim_serviceLines_4_procedureModifiers_2', 'claim_serviceLines_1_Diagnose_pointer', 'claim_serviceLines_1_procedureModifiers_2', 'icdL', 'patient_zip', 'claim_serviceLines_2_procedureModifiers_3', 'icdJ', 'claim_serviceLines_2_serviceDateTo', 'claim_serviceLines_5_Diagnose_pointer', 'claim_serviceLines_2_procedureModifiers_0', 'claimserviceLines_5_units', 'icdK', 'claim_serviceLines_3_procedureModifiers_3', 'claim_serviceLines_2_procedureModifiers_1', 'payer_id', 'claimserviceLines_5_chargeAmount', 'icdH', 'icdD', 'claim_serviceLines_5_procedureModifiers_3', 'claim_serviceLines_5_procedureModifiers_1', 'claim_serviceLines_1_serviceDateFrom', 'patient_state', 'claimserviceLines_3_chargeAmount', 'claimserviceLines_4_chargeAmount', 'claim_serviceLines_1_procedureModifiers_3', 'claimserviceLines_3_units', 'claim_serviceLines_4_procedureModifiers_3', 'patient_middleName', 'claim_serviceLines_0_Diagnose_pointer', 'claim_serviceLines_3_procedureModifiers_2', 'claim_serviceLines_2_procedureModifiers_2', 'claimserviceLines_2_units', 'claim_serviceLines_3_procedureModifiers_1', 'patient_gender', 'claimserviceLines_4_units', 'claim_serviceLines_4_Diagnose_pointer', 'icdF', 'claim_serviceLines_2_serviceDateFrom', 'icdC', 'claim_serviceLines_5_procedureModifiers_0', 'claimserviceLines_4_procedureCode', 'claim_serviceLines_1_procedureModifiers_1', 'claim_serviceLines_5_procedureModifiers_2', 'icdE', 'patient_streetLine2', 'icdG']
+
+
+def add_one_day(date_string):
+    """
+    Adds one day to the given date string.
+
+    Parameters:
+    date_string (str): A date string in the format 'YYYY-MM-DD'
+
+    Returns:
+    str: A new date string with one day added
+    """
+    date_object = datetime.strptime(date_string, '%Y-%m-%d')
+    new_date_object = date_object + timedelta(days=1)
+    new_date_string = new_date_object.strftime('%Y-%m-%d')
+    return new_date_string
 
 def process_date(date):
     year,month,day = date.split("-")
@@ -281,6 +299,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
 
 def id_get(from_date,end_date,status,user,password_our):
+    end_date = add_one_day(end_date)
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
@@ -305,16 +324,23 @@ def id_get(from_date,end_date,status,user,password_our):
     while True:
         url = f'https://secure.simplepractice.com/frontend/insurance-claims?fields%5BinsuranceClaims%5D=hasPendingStatus%2CclaimSubmittedDate%2Cclient%2CinsurancePlan%2CcreatedAt%2Cstatus%2CcurrentSubmission&fields%5Bclients%5D=hashedId%2CpreferredName&fields%5BinsurancePlans%5D=name&fields%5BclaimSubmissions%5D=clearinghouse%2CadditionalInformation&filter%5BclientHashedId%5D=&filter%5BinsurancePayerId%5D=&filter%5Bstatus%5D=prepared&filter%5BtimeRange%5D={from_date}T05%3A00%3A00.000Z%2C{end_date}T04%3A59%3A59.999Z&filter%5BincludeClaimData%5D=false&filter%5BincludeOutOfNetwork%5D=false&include=client%2CinsurancePlan%2CcurrentSubmission&page%5Bnumber%5D={page}&page%5Bsize%5D=50&sort=priority%2C-createdDate%2Cclients.lastName%2Cclients.firstName'
 
+
         driver.get(url)
-        data = json.loads(driver.find_element(By.TAG_NAME,"pre").text)["data"]
-        all_data  = all_data+data
+        full = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
+        data = full["data"]
+        included = full["included"]
+
+        for x in range(len(data)):
+            new_dict = {}
+            new_dict["first_id"] = included[x]["attributes"]["hashedId"]
+            new_dict["second_id"] = (data[x]["id"])
+            all_data.append(new_dict)
         if len(data) <50:
             break
         else:
             page = page+1
         
     return all_data
-
 
 def id_get_page(from_date,end_date,number_page,user,password_our):
     options = webdriver.ChromeOptions()
