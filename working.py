@@ -195,6 +195,7 @@ def convert_date(date):
     yyyy = splitter[2]
     
     return yyyy+"-"+mm+"-"+dd
+
 def unbilled_create(from_date,end_date,user,password_our):
 
     from_date = convert_date(from_date)
@@ -225,7 +226,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     #_fbp
     check = ["_ga","_gid","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
     try:
-        all_cookies=driver.get_cookies();
+        all_cookies=driver.get_cookies()
         cookies_dict = {}    
         for cookie in all_cookies:
             cookies_dict[cookie['name']]=cookie['value']
@@ -235,7 +236,7 @@ def unbilled_create(from_date,end_date,user,password_our):
         string = string.strip("; ")
     except:
         time.sleep(2)
-        all_cookies=driver.get_cookies();
+        all_cookies=driver.get_cookies()
         cookies_dict = {}    
         for cookie in all_cookies:
             cookies_dict[cookie['name']]=cookie['value']
@@ -255,9 +256,8 @@ def unbilled_create(from_date,end_date,user,password_our):
         "cookie":string
     }
     page_no = 1
-    all_ids = []
+    all_ids = {}
     while True:
-        loop_ids = []
         url_new = url.format(end_date,from_date,page_no)
         driver.get(url_new)
         json_data = json.loads(driver.find_element(By.CSS_SELECTOR,'pre').text)["data"]
@@ -265,21 +265,21 @@ def unbilled_create(from_date,end_date,user,password_our):
         for x in json_data:
             if x["attributes"]["missingInsuranceData"] == "":
                 for y in x["relationships"]["unbilledAppointments"]["data"]:
-                    loop_ids.append(y["id"])
+                    if x["id"] not in all_ids:
+                        all_ids[x["id"]] = []
+                    all_ids[x["id"]].append(y["id"])
         
         if len(json_data) == 50:
             page_no = page_no+1
-            all_ids = all_ids + loop_ids
             continue
         else:
-            all_ids = all_ids + loop_ids
             break
             
 
-    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False})    
+    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False,"updateAllBillingZipCodes":False})    
+
     r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
-    
-    
+
 def id_get(from_date,end_date,status,user,password_our):
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
