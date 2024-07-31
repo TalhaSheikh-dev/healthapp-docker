@@ -280,7 +280,7 @@ def unbilled_create(from_date,end_date,user,password_our):
         "content-type":"application/vnd.api+json",
         "origin":"https://secure.simplepractice.com",
         "referer":"https://secure.simplepractice.com/clients/29aef6cf67198727/overview",
-        "cookie":string
+        # "cookie":string
     }
     page_no = 1
     all_ids = {}
