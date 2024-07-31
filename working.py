@@ -242,33 +242,37 @@ def unbilled_create(from_date,end_date,user,password_our):
     time.sleep(7)
     
     #_fbp
-    # check = ["_ga","_gid","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
+    check = ["_ga","_gid","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
 
-    # try:
-    #     all_cookies=driver.get_cookies()
-    #     print(all_cookies)
-    #     cookies_dict = {}    
-    #     for cookie in all_cookies:
-    #         cookies_dict[cookie['name']]=cookie['value']
-    #     string = ""
-    #     for i in check:
-    #         string = string + i+"="+cookies_dict[i]+"; "
-    #     string = string.strip("; ")
-    # except:
-    #     time.sleep(2)
-    #     all_cookies=driver.get_cookies()
-    #     cookies_dict = {}    
-    #     for cookie in all_cookies:
-    #         cookies_dict[cookie['name']]=cookie['value']
+    try:
+        all_cookies=driver.get_cookies()
+        print(all_cookies)
+        cookies_dict = {}    
+        for cookie in all_cookies:
+            cookies_dict[cookie['name']]=cookie['value']
+        string = ""
+        for i in check:
+            try:
+                string = string + i+"="+cookies_dict[i]+"; "
+            except:
+                pass
+        string = string.strip("; ")
+    except:
+        time.sleep(2)
+        all_cookies=driver.get_cookies()
+        cookies_dict = {}    
+        for cookie in all_cookies:
+            cookies_dict[cookie['name']]=cookie['value']
             
-    #     string = ""
-    #     for i in check:
-    #         string = string + i+"="+cookies_dict[i]+"; "            
-    #     string = string.strip("; ")
+        string = ""
+        for i in check:
+            try:
+                string = string + i+"="+cookies_dict[i]+"; "
+            except:
+                pass
+        string = string.strip("; ")
 
-    cookies = driver.get_cookies()
-    string = '; '.join([f"{cookie['name']}={cookie['value']}" for cookie in cookies])
-            
+
     header = {
         "user-agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
         "x-csrf-token":token,
