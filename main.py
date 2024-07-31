@@ -92,8 +92,8 @@ def unbill():
 
   #try:
   if True:
-      unbilled_create(from_date,end_date,user,password)
-      return jsonify({"message":"successfull"})
+      message = unbilled_create(from_date,end_date,user,password)
+      return jsonify({"message":message})
   #except:
       #return jsonify({"message":"Unable to create unbilled"})
   
