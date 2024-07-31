@@ -303,6 +303,7 @@ def unbilled_create(from_date,end_date,user,password_our):
         return "sucessful"
     else:
         return "unsucessful"
+    return str(r.status_code)
 def id_get(from_date,end_date,status,user,password_our):
     end_date = add_one_day(end_date)
     options = webdriver.ChromeOptions()
