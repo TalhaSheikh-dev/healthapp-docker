@@ -246,7 +246,6 @@ def unbilled_create(from_date,end_date,user,password_our):
 
     try:
         all_cookies=driver.get_cookies()
-        print(all_cookies)
         cookies_dict = {}    
         for cookie in all_cookies:
             cookies_dict[cookie['name']]=cookie['value']
@@ -280,7 +279,7 @@ def unbilled_create(from_date,end_date,user,password_our):
         "content-type":"application/vnd.api+json",
         "origin":"https://secure.simplepractice.com",
         "referer":"https://secure.simplepractice.com/clients/29aef6cf67198727/overview",
-        # "cookie":string
+        "cookie":string
     }
     page_no = 1
     all_ids = {}
@@ -303,15 +302,14 @@ def unbilled_create(from_date,end_date,user,password_our):
             break
             
 
-    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False,"updateAllBillingZipCodes":False})    
+    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False})    
 
     r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
-    # if r.status_code == 201:
-    #     return "sucessful"
-    # else:
-    #     return "unsucessful"
-    return str(r.status_code)
-print(unbilled_create("07/30/2024","07/31/2024","info+1@gina4med.com","Rakovski@345"))
+    if r.status_code == 201:
+        return "sucessful"
+    else:
+        return "unsucessful"
+
 def id_get(from_date,end_date,status,user,password_our):
     end_date = add_one_day(end_date)
     options = webdriver.ChromeOptions()
