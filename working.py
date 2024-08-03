@@ -306,7 +306,7 @@ def unbilled_create(from_date,end_date,user,password_our):
 
     r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
     
-    if r.status_code == 201 or r.status_code = 422:
+    if r.status_code == 201 or r.status_code == 422:
         return "sucessful"
     else:
         return "unsucessful"
