@@ -22,14 +22,12 @@ rename_dict = {'Date':'claim_serviceLines_0_serviceDateFrom',
        'Modifier Code 3':'claim_serviceLines_0_procedureModifiers_2', 'Modifier Code 4':'claim_serviceLines_0_procedureModifiers_3'}
 
 
-
 drop_columns = ['Type','Appointment Type','Billing Method','Payment Type','Service Description','Clinician Type','Bill as Supervisor','Supervisor Name','Supervisor NPI','Location',
                'Primary Insurer Group', 'In Network', 'Secondary Insurer Name','Secondary Insurer Group', 'Note Status',
                'Payment Assigned to Practice' , 'Patient Amount Due','Patient Amount Paid', 'Patient Unassigned Credit',
                'Patient Balance Status', 'Insurance Amount Due','Insurance Amount Paid', 'Insurance Unassigned Credit','Insurance Balance Status',
                'Documents Created', 'Comments','Clinician Name'
                ]
-
 
 
 all_columns = ['claim_serviceLines_3_Diagnose_pointer', 'claimserviceLines_3_procedureCode', 'claimserviceLines_1_units', 'patient_streetLine1', 'patient_telephone', 'claimserviceLines_1_placeOfService', 'claim_serviceLines_4_procedureModifiers_0', 'icdI', 'claim_serviceLines_1_serviceDateTo', 'claimserviceLines_5_placeOfService', 'claimserviceLines_2_procedureCode', 'claimserviceLines_2_placeOfService', 'claim_serviceLines_4_procedureModifiers_1', 'claim_serviceLines_4_serviceDateFrom', 'patient_city', 'claimserviceLines_2_chargeAmount', 'icdB', 'claim_serviceLines_4_serviceDateTo', 'claimserviceLines_5_procedureCode', 'claim_serviceLines_5_serviceDateFrom', 'claim_serviceLines_1_procedureModifiers_0', 'claim_serviceLines_3_procedureModifiers_0', 'claimserviceLines_4_placeOfService', 'claim_serviceLines_3_serviceDateTo', 'claim_serviceLines_3_serviceDateFrom', 'claim_serviceLines_0_serviceDateTo', 'claim_serviceLines_2_Diagnose_pointer', 'claim_serviceLines_5_serviceDateTo', 'claimserviceLines_1_procedureCode', 'claimserviceLines_3_placeOfService', 'claimserviceLines_1_chargeAmount', 'claim_serviceLines_4_procedureModifiers_2', 'claim_serviceLines_1_Diagnose_pointer', 'claim_serviceLines_1_procedureModifiers_2', 'icdL', 'patient_zip', 'claim_serviceLines_2_procedureModifiers_3', 'icdJ', 'claim_serviceLines_2_serviceDateTo', 'claim_serviceLines_5_Diagnose_pointer', 'claim_serviceLines_2_procedureModifiers_0', 'claimserviceLines_5_units', 'icdK', 'claim_serviceLines_3_procedureModifiers_3', 'claim_serviceLines_2_procedureModifiers_1', 'payer_id', 'claimserviceLines_5_chargeAmount', 'icdH', 'icdD', 'claim_serviceLines_5_procedureModifiers_3', 'claim_serviceLines_5_procedureModifiers_1', 'claim_serviceLines_1_serviceDateFrom', 'patient_state', 'claimserviceLines_3_chargeAmount', 'claimserviceLines_4_chargeAmount', 'claim_serviceLines_1_procedureModifiers_3', 'claimserviceLines_3_units', 'claim_serviceLines_4_procedureModifiers_3', 'patient_middleName', 'claim_serviceLines_0_Diagnose_pointer', 'claim_serviceLines_3_procedureModifiers_2', 'claim_serviceLines_2_procedureModifiers_2', 'claimserviceLines_2_units', 'claim_serviceLines_3_procedureModifiers_1', 'patient_gender', 'claimserviceLines_4_units', 'claim_serviceLines_4_Diagnose_pointer', 'icdF', 'claim_serviceLines_2_serviceDateFrom', 'icdC', 'claim_serviceLines_5_procedureModifiers_0', 'claimserviceLines_4_procedureCode', 'claim_serviceLines_1_procedureModifiers_1', 'claim_serviceLines_5_procedureModifiers_2', 'icdE', 'patient_streetLine2', 'icdG']
@@ -62,7 +60,6 @@ def process_df(df):
     df = df.drop(drop_columns, axis=1)
     df['Service Code'] = df['Service Code'].fillna(-1).astype(int).astype(str).replace("-1","")
     df['Clinician NPI'] = df['Clinician NPI'].fillna(-1).astype(np.int64).astype(str).replace("-1","")
-    print(df['Clinician NPI'])
     df['Rate'] = df['Rate'].astype(float, errors='ignore') 
     df = (df.replace(r'^\s*$', np.nan, regex=True))
     df.rename(columns = rename_dict, inplace = True)
@@ -133,18 +130,17 @@ def payer_data(user,password_our,count):
     url = "https://secure.simplepractice.com/clients"
     driver.get(url)
 
-    username = driver.find_element(By.ID,'user_login')
+    username = driver.find_element(By.ID,'user_email')
     username.send_keys(user)
     password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element(By.ID,'new_user')
+    form = driver.find_element(By.ID,'submitBtn')
     form.submit()
     main = []
     for counter in range(count,count+10):
         driver.get("https://secure.simplepractice.com/frontend/insurance-plans? filter[search]=&filter[providerFilter]=search&include=insurancePayer,eligiblePayer,practicePayerAddresses,practiceInsurancePayers&page[number]={}&page[size]=50".format(counter))
         counter = counter+1
         a = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
-        print(counter)
         if len(a["data"]) ==0:
             break
         for x in a["data"]:
@@ -183,11 +179,11 @@ def get_all_client(user,password_our):
     url = "https://secure.simplepractice.com/clients"
     driver.get(url)
 
-    username = driver.find_element(By.ID,'user_login')
+    username = driver.find_element(By.ID,'user_email')
     username.send_keys(user)
     password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element(By.ID,'new_user')
+    form = driver.find_element(By.ID,'submitBtn')
     form.submit()
 
     url = '''https://secure.simplepractice.com/frontend/base-clients?fields[baseClients]=emails,clinician,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge&fields[clients]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,enableEmailReminders,enableOutstandingDocumentReminders,enableSmsvoiceReminders,isMinor,reminderEmail,reminderPhone&fields[clientCouples]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,firstNameLastInitial&fields[insuranceInfo]=hieEnabled&filter[thisType]=Client,ClientCouple&include=phones,emails,insuranceInfos,clientRelationships.client,clientRelationships.relatedClient.phones,clientRelationships.relatedClient.emails,reciprocalClientRelationships.client.phones,reciprocalClientRelationships.client.emails,reciprocalClientRelationships.relatedClient&page[number]='''
@@ -231,11 +227,11 @@ def unbilled_create(from_date,end_date,user,password_our):
     driver.get("https://secure.simplepractice.com/users/sign_in")
     
   
-    username = driver.find_element(By.ID,'user_login')
+    username = driver.find_element(By.ID,'user_email')
     username.send_keys(user)
     password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element(By.ID,'new_user')
+    form = driver.find_element(By.ID,'submitBtn')
     form.submit()
 
     token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
@@ -321,22 +317,22 @@ def id_get(from_date,end_date,status,user,password_our):
     options.add_argument("window-size=1400,900")
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+
     url = "https://secure.simplepractice.com/billings/insurance/claims?endDate={}&startDate={}&status={}".format(end_date,from_date,status)
     driver.get(url)
 
-    username = driver.find_element(By.ID,'user_login')
+    username = driver.find_element(By.ID,'user_email')
     username.send_keys(user)
     password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element(By.ID,'new_user')
+    form = driver.find_element(By.ID,'submitBtn')
     form.submit()
-    
+    time.sleep(2)
     all_data = []
     page = 1
     
     while True:
         url = f'https://secure.simplepractice.com/frontend/insurance-claims?fields%5BinsuranceClaims%5D=hasPendingStatus%2CclaimSubmittedDate%2Cclient%2CinsurancePlan%2CcreatedAt%2Cstatus%2CcurrentSubmission&fields%5Bclients%5D=hashedId%2CpreferredName&fields%5BinsurancePlans%5D=name&fields%5BclaimSubmissions%5D=clearinghouse%2CadditionalInformation&filter%5BclientHashedId%5D=&filter%5BinsurancePayerId%5D=&filter%5Bstatus%5D=prepared&filter%5BtimeRange%5D={from_date}T05%3A00%3A00.000Z%2C{end_date}T04%3A59%3A59.999Z&filter%5BincludeClaimData%5D=false&filter%5BincludeOutOfNetwork%5D=false&include=client%2CinsurancePlan%2CcurrentSubmission&page%5Bnumber%5D={page}&page%5Bsize%5D=50&sort=priority%2C-createdDate%2Cclients.lastName%2Cclients.firstName'
-
 
         driver.get(url)
         full = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
@@ -374,11 +370,11 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
     driver.get(url)
     
   
-    username = driver.find_element(By.ID,'user_login')
+    username = driver.find_element(By.ID,'user_email')
     username.send_keys(user)
     password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element(By.ID,'new_user')
+    form = driver.find_element(By.ID,'submitBtn')
     form.submit()
 
     
@@ -436,11 +432,11 @@ def video_get(url,user,password_our):
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     x = driver.get(url)
     
-    username = driver.find_element(By.ID,'user_login')
+    username = driver.find_element(By.ID,'user_email')
     username.send_keys(user)
     password = driver.find_element(By.ID,'user_password')
     password.send_keys(password_our)
-    form = driver.find_element(By.ID,'new_user')
+    form = driver.find_element(By.ID,'submitBtn')
     form.submit()
 
     data = {}
