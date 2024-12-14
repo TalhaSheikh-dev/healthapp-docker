@@ -212,8 +212,10 @@ def convert_date(date):
 
 def unbilled_create(from_date,end_date,user,password_our):
 
-    from_date = convert_date(from_date)
-    end_date = convert_date(end_date)
+    if "/" in from_date:
+        from_date = convert_date(from_date)
+        end_date = convert_date(end_date)
+    
     url = '''https://secure.simplepractice.com/frontend/insured-clients?fields[clients]=hashedId,preferredName&filter[endDate]={}&filter[startDate]={}&include=unbilledAppointments,client,insurancePlan&page[number]={}&page[size]=50'''
     
     options = webdriver.ChromeOptions()
