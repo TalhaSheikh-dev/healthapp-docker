@@ -210,14 +210,16 @@ def convert_date(date):
     
     return yyyy+"-"+mm+"-"+dd
 
+
 def unbilled_create(from_date,end_date,user,password_our):
 
     if "/" in from_date:
         from_date = convert_date(from_date)
         end_date = convert_date(end_date)
     
-    url = '''https://secure.simplepractice.com/frontend/insured-clients?fields[clients]=hashedId,preferredName&filter[endDate]={}&filter[startDate]={}&include=unbilledAppointments,client,insurancePlan&page[number]={}&page[size]=50'''
-    
+
+    url = '''https://secure.simplepractice.com/frontend/insured-clients?fields%5Bclients%5D=hashedId%2CinsuranceBillingSubtype%2CpreferredName%2CinsuranceInfos&fields%5BteamMembers%5D=name%2Csuffix%2CfirstName%2ClastName%2Croles&filter%5BendDate%5D={}&filter%5BstartDate%5D={}&include=unbilledAppointments.client.insuranceInfos.insurancePlan.practiceInsurancePayers%2CunbilledAppointments.clinician%2Cclient%2CinsurancePlan%2CunbilledAppointments.appointmentClients.client.insuranceInfos.insurancePlan.practiceInsurancePayers%2CunbilledAppointments.appointmentClients.appointment&page%5Bnumber%5D={}&page%5Bsize%5D=50'''
+
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
@@ -226,6 +228,7 @@ def unbilled_create(from_date,end_date,user,password_our):
     options.add_argument("window-size=1400,900")
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+
     driver.get("https://secure.simplepractice.com/users/sign_in")
     
   
@@ -235,57 +238,16 @@ def unbilled_create(from_date,end_date,user,password_our):
     password.send_keys(password_our)
     form = driver.find_element(By.ID,'submitBtn')
     form.submit()
-
+    time.sleep(2)
     token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
-    time.sleep(7)
-    
-    #_fbp
-    check = ["_ga","_gid","sp_last_access","__stripe_mid","__zlcmid","user.id","_slvddv","_slvs","__stripe_sid","mp_f10ab4b365f1e746fe72d30f0e682dbf_mixpanel","user.expires_at","simplepractice-session"]
+    time.sleep(5)
 
-    try:
-        all_cookies=driver.get_cookies()
-        cookies_dict = {}    
-        for cookie in all_cookies:
-            cookies_dict[cookie['name']]=cookie['value']
-        string = ""
-        for i in check:
-            try:
-                string = string + i+"="+cookies_dict[i]+"; "
-            except:
-                pass
-        string = string.strip("; ")
-    except:
-        time.sleep(2)
-        all_cookies=driver.get_cookies()
-        cookies_dict = {}    
-        for cookie in all_cookies:
-            cookies_dict[cookie['name']]=cookie['value']
-            
-        string = ""
-        for i in check:
-            try:
-                string = string + i+"="+cookies_dict[i]+"; "
-            except:
-                pass
-        string = string.strip("; ")
-
-
-    header = {
-        "user-agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
-        "x-csrf-token":token,
-        "accept":"application/vnd.api+json",
-        "content-type":"application/vnd.api+json",
-        "origin":"https://secure.simplepractice.com",
-        "referer":"https://secure.simplepractice.com/clients/29aef6cf67198727/overview",
-        "cookie":string
-    }
     page_no = 1
     all_ids = {}
     while True:
         url_new = url.format(end_date,from_date,page_no)
         driver.get(url_new)
         json_data = json.loads(driver.find_element(By.CSS_SELECTOR,'pre').text)["data"]
-        
         for x in json_data:
             if x["attributes"]["missingInsuranceData"] == "":
                 for y in x["relationships"]["unbilledAppointments"]["data"]:
@@ -298,16 +260,26 @@ def unbilled_create(from_date,end_date,user,password_our):
             continue
         else:
             break
-            
 
-    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False})    
+    all_cookies = driver.get_cookies()
 
-    r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
+    header = {
+        "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "x-csrf-token":token,
+        "acccept":"application/vnd.api+json",
+        "content-type":"application/vnd.api+json",
+        "origin":"https://secure.simplepractice.com",
+        "referer":f"https://secure.simplepractice.com/billings/insurance?endDate={end_date}&startDate={from_date}",
+        "cookie":"; ".join([f"{cookie['name']}={cookie['value']}" for cookie in all_cookies]),
+    }
     
-    if r.status_code == 201 or r.status_code == 422:
-        return "sucessful"
+    payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False,"updateAllBillingZipCodes":False})    
+    r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
+    if r.status_code == 201:
+        return "successful"
     else:
-        return "unsucessful"
+        return "unsuccessful"
+
 
 def id_get(from_date,end_date,status,user,password_our):
     end_date = add_one_day(end_date)
