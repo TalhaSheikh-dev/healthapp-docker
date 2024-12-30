@@ -285,7 +285,6 @@ def unbilled_create(from_date,end_date,user,password_our):
         return "unsuccessful"
 
 
-
 def id_get(from_date,end_date,status,user,password_our):
     end_date = add_one_day(end_date)
     options = webdriver.ChromeOptions()
@@ -314,6 +313,7 @@ def id_get(from_date,end_date,status,user,password_our):
         url = f'https://secure.simplepractice.com/frontend/insurance-claims?fields%5BinsuranceClaims%5D=hasPendingStatus%2CclaimSubmittedDate%2Cclient%2CinsurancePlan%2CcreatedAt%2Cstatus%2CcurrentSubmission&fields%5Bclients%5D=hashedId%2CpreferredName&fields%5BinsurancePlans%5D=name&fields%5BclaimSubmissions%5D=clearinghouse%2CadditionalInformation&filter%5BclientHashedId%5D=&filter%5BinsurancePayerId%5D=&filter%5Bstatus%5D=prepared&filter%5BtimeRange%5D={from_date}T05%3A00%3A00.000Z%2C{end_date}T04%3A59%3A59.999Z&filter%5BincludeClaimData%5D=false&filter%5BincludeOutOfNetwork%5D=false&include=client%2CinsurancePlan%2CcurrentSubmission&page%5Bnumber%5D={page}&page%5Bsize%5D=50&sort=priority%2C-createdDate%2Cclients.lastName%2Cclients.firstName'
 
         driver.get(url)
+        time.sleep(2)
         full = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
         data = full["data"]
         included = full["included"]
