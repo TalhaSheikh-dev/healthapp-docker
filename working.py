@@ -280,9 +280,9 @@ def unbilled_create(from_date,end_date,user,password_our):
     print(r.status_code)
     print(r.text)
     if r.status_code == 201:
-        return "successful"
+        return "Successful"
     else:
-        return "unsuccessful"
+        return "Unsuccessful"
 
 
 def id_get(from_date,end_date,status,user,password_our):

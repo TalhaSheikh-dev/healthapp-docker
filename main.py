@@ -80,8 +80,11 @@ def claims():
   password = request.form["password"]
   status = request.form["status"]
   data = ""
-  return jsonify({"all_claims_id":id_get(from_date,end_date,status,user,password)})
-  
+  try:
+      return jsonify({"all_claims_id":id_get(from_date,end_date,status,user,password)})
+  except Exception as e:
+      return jsonify({"message":"bad request","all_claims_id":[]}),400
+
 @app.route('/unbill', methods=['POST'])
 def unbill():
 
@@ -93,8 +96,9 @@ def unbill():
   try:
       message = unbilled_create(from_date,end_date,user,password)
       return jsonify({"message":message})
-  except:
-      return jsonify({"message":"unsuccessful"})
+  except Exception as e:
+      logging.error(e,exc_info=True)
+      return jsonify({"message":"bad request"}),400
   
       
 if __name__ == '__main__':
