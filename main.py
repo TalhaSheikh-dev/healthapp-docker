@@ -84,6 +84,7 @@ def claims():
   try:
       return jsonify({"all_claims_id":id_get(from_date,end_date,status,user,password)})
   except Exception as e:
+      logging.error(e,exc_info=True)
       return jsonify({"message":"bad request","all_claims_id":[]}),400
 
 @app.route('/unbill', methods=['POST'])
