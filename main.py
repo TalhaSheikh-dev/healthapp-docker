@@ -1,108 +1,129 @@
 
-from flask import Flask,request
+# imports
+from flask import Flask,request,jsonify
 from working import *
-from flask import jsonify
 import logging
+import logging.handlers
+
+# initiating flask app 
 app= Flask(__name__)
 app.debug = False
 
+# Configure logging
+log_handler = logging.handlers.TimedRotatingFileHandler("app.log", when="midnight", interval=1, backupCount=1)
+log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+log_handler.suffix = "%Y-%m-%d"
+log_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(log_handler)
+logging.getLogger().setLevel(logging.INFO)
+
+# endpoint to test health of app
 @app.route('/health', methods=['POST'])
-def health():
-  return jsonify("successful")
-      
+def health_test():
+    return jsonify({"message": "successful"})
 
+# endpoint to get therapy notes claims
 @app.route('/tn-claims', methods=['POST'])
-def therapynotes_claims():
-  code = request.form["code"]
-  user = request.form["user"]
-  password = request.form["password"]
-  start = request.form["start"]
-  end = request.form["end"]      
-  #try:
-  if True:
-      return therapynotes_claims_data(code,user,password,start,end)
-  #except:
-      #return jsonify({"message":"Not correct data"})
-      
+def therapy_notes_claims():
+    try:
+        data = request.form
+        return therapy_notes_claims_data(data["code"], data["user"], data["password"], data["start"], data["end"])
+    except KeyError:
+        return jsonify({"message": "Missing required fields"}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": "Internal server error"}), 500
 
+# endpoint to get all clients from simple health practice
 @app.route('/clients', methods=['POST'])
 def clients_data():
-  user = request.form["user"]
-  password = request.form["password"]
-  #try:
-  if True:
-      return jsonify(get_all_client(user,password))
-  #except:
-      #return jsonify({"message":"Not correct data"})
-      
+    try:
+        user, password,secret_key = request.form["user"], request.form["password"],request.form["secretKey"]
+        return jsonify(get_all_client(user, password,secret_key))
+    except KeyError:
+        return jsonify({"message": "Missing required fields"}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": "Internal server error"}), 500
 
-
-
+# endpoint to get all insurance payers data from simple health app
 @app.route('/payer', methods=['POST'])
 def payer():
-
-  user = request.form["user"]
-  password = request.form["password"]
-  try:
-    count = int(request.form["start"])
-  except:
-    return jsonify({"message":"count should be int"})
-  try:
-    data = payer_data(user,password,count)
-    data = {"data":data}
-    return jsonify(data)
-  except:
-    return jsonify({"message":"Not correct data"})
+    try:
+        user, password,secret_key = request.form["user"], request.form["password"],request.form["secretKey"]
+        count = int(request.form["start"])
+        return jsonify({"data": payer_data(user, password, count,secret_key)})
+    except KeyError:
+        return jsonify({"message": "Missing required fields"}), 400
+    except ValueError:
+        return jsonify({"message": "Count should be an integer"}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": "Internal server error"}), 500
     
-    
-    
+# endpoint to get all the data of insured client
 @app.route('/data', methods=['POST'])
-def data():
-  user = ""
-  first_number = request.form["first_number"]
-  second_number = request.form["second_number"]
-  user = request.form["user"]
-  password = request.form["password"]
-  url = "https://secure.simplepractice.com/clients/"+str(first_number)+"/insurance_claims/"+str(second_number)
-  try:
-    return jsonify(video_get(url,user,password))
+def insured_data():
+    try:
+        user, password = request.form["user"], request.form["password"]
+        first_number, second_number = request.form["first_number"], request.form["second_number"]
+        secret_key = request.form["secretKey"]
+        url = f"https://secure.simplepractice.com/clients/{first_number}/insurance_claims/{second_number}"
+        return jsonify(get_insurance_client_data(url, user, password,secret_key))
+    except KeyError:
+        return jsonify({"message": "Missing required fields"}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": str(e)}), 500
+
+@app.route('/submitClaim', methods=['POST'])
+def submit_claim():
+    try:
+        user, password = request.form["user"], request.form["password"]
+        first_number, second_number = request.form["first_number"], request.form["second_number"]
+        secret_key = request.form["secretKey"]
+        is_gt = request.form.get('is_gt', 'false').lower() == 'true'
+        is_ho = request.form.get('is_ho', 'false').lower() == 'true'
+
+        url = f"https://secure.simplepractice.com/clients/{first_number}/insurance_claims/{second_number}"
+        return jsonify({"message":submit_claim_data(url, user, password,secret_key,is_gt,is_ho)})
+    except KeyError:
+        return jsonify({"message": "Missing required fields"}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": str(e)}), 500
       
-  except:
-    return jsonify({"message":"Not correct data"})
-      
-      
-      
+# endpoint to get all claims between start and end date from simple health app
 @app.route('/claim', methods=['POST'])
 def claims():
+    try:
+        from_date, end_date = request.form["start"], request.form["end"]
+        user, password, status = request.form["user"], request.form["password"], request.form["status"]
+        secret_key = request.form["secretKey"]
+        return jsonify({"all_claims_id": get_all_claims(from_date, end_date, status, user, password,secret_key)})
+    except KeyError:
+        return jsonify({"message": "Missing required fields", "all_claims_id": []}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": "Internal server error", "all_claims_id": []}), 500
 
-  from_date = request.form["start"]
-  end_date = request.form["end"]
-  user = request.form["user"]
-  password = request.form["password"]
-  status = request.form["status"]
-  data = ""
-  try:
-      return jsonify({"all_claims_id":id_get(from_date,end_date,status,user,password)})
-  except Exception as e:
-      logging.error(e,exc_info=True)
-      return jsonify({"message":"bad request","all_claims_id":[]}),400
-
+# endpoint to convert unclaim to claim in simple health app
 @app.route('/unbill', methods=['POST'])
 def unbill():
+    try:
+        from_date, end_date = request.form["start"], request.form["end"]
+        user, password = request.form["user"], request.form["password"]
+        secret_key = request.form["secretKey"]
 
-  from_date = request.form["start"]
-  end_date = request.form["end"]
-  user = request.form["user"]
-  password = request.form["password"]
+        return jsonify({"message": create_un_bill_user(from_date, end_date, user, password,secret_key)})
+    except KeyError:
+        return jsonify({"message": "Missing required fields"}), 400
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return jsonify({"message": str(e)}), 500
 
-  try:
-      message = unbilled_create(from_date,end_date,user,password)
-      return jsonify({"message":message})
-  except Exception as e:
-      logging.error(e,exc_info=True)
-      return jsonify({"message":"bad request"}),400
-  
       
+
 if __name__ == '__main__':
     app.run()  
 

@@ -1,82 +1,118 @@
 from selenium import webdriver
 import os
 import time
-import ast
 import json
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
 import requests
 import pandas as pd
-import json
-import numpy as np
 from datetime import datetime, timedelta
+from config import *
+from helper import *
+import logging
+import gc
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-rename_dict = {'Date':'claim_serviceLines_0_serviceDateFrom',
-       'Service Code':'claimserviceLines_0_procedureCode', 'POS':'claimserviceLines_0_placeOfService', 'Units':'claimserviceLines_0_units', 'Last Name':'patient_lastName',
-       'First Name':'patient_firstName', 'DOB':'patient_dob', 'Patient Member ID':'insured_id',
-       'Clinician NPI':'claimserviceLines_0_renderingProvidernpi',
-       'Primary Insurer Name':'payer_name',
-       'Primary Diagnosis':'icdA','Rate':'claimserviceLines_0_chargeAmount',
-       'Modifier Code 1':'claim_serviceLines_0_procedureModifiers_0', 'Modifier Code 2':'claim_serviceLines_0_procedureModifiers_1',
-       'Modifier Code 3':'claim_serviceLines_0_procedureModifiers_2', 'Modifier Code 4':'claim_serviceLines_0_procedureModifiers_3'}
-
-
-drop_columns = ['Type','Appointment Type','Billing Method','Payment Type','Service Description','Clinician Type','Bill as Supervisor','Supervisor Name','Supervisor NPI','Location',
-               'Primary Insurer Group', 'In Network', 'Secondary Insurer Name','Secondary Insurer Group', 'Note Status',
-               'Payment Assigned to Practice' , 'Patient Amount Due','Patient Amount Paid', 'Patient Unassigned Credit',
-               'Patient Balance Status', 'Insurance Amount Due','Insurance Amount Paid', 'Insurance Unassigned Credit','Insurance Balance Status',
-               'Documents Created', 'Comments','Clinician Name'
-               ]
-
-
-all_columns = ['claim_serviceLines_3_Diagnose_pointer', 'claimserviceLines_3_procedureCode', 'claimserviceLines_1_units', 'patient_streetLine1', 'patient_telephone', 'claimserviceLines_1_placeOfService', 'claim_serviceLines_4_procedureModifiers_0', 'icdI', 'claim_serviceLines_1_serviceDateTo', 'claimserviceLines_5_placeOfService', 'claimserviceLines_2_procedureCode', 'claimserviceLines_2_placeOfService', 'claim_serviceLines_4_procedureModifiers_1', 'claim_serviceLines_4_serviceDateFrom', 'patient_city', 'claimserviceLines_2_chargeAmount', 'icdB', 'claim_serviceLines_4_serviceDateTo', 'claimserviceLines_5_procedureCode', 'claim_serviceLines_5_serviceDateFrom', 'claim_serviceLines_1_procedureModifiers_0', 'claim_serviceLines_3_procedureModifiers_0', 'claimserviceLines_4_placeOfService', 'claim_serviceLines_3_serviceDateTo', 'claim_serviceLines_3_serviceDateFrom', 'claim_serviceLines_0_serviceDateTo', 'claim_serviceLines_2_Diagnose_pointer', 'claim_serviceLines_5_serviceDateTo', 'claimserviceLines_1_procedureCode', 'claimserviceLines_3_placeOfService', 'claimserviceLines_1_chargeAmount', 'claim_serviceLines_4_procedureModifiers_2', 'claim_serviceLines_1_Diagnose_pointer', 'claim_serviceLines_1_procedureModifiers_2', 'icdL', 'patient_zip', 'claim_serviceLines_2_procedureModifiers_3', 'icdJ', 'claim_serviceLines_2_serviceDateTo', 'claim_serviceLines_5_Diagnose_pointer', 'claim_serviceLines_2_procedureModifiers_0', 'claimserviceLines_5_units', 'icdK', 'claim_serviceLines_3_procedureModifiers_3', 'claim_serviceLines_2_procedureModifiers_1', 'payer_id', 'claimserviceLines_5_chargeAmount', 'icdH', 'icdD', 'claim_serviceLines_5_procedureModifiers_3', 'claim_serviceLines_5_procedureModifiers_1', 'claim_serviceLines_1_serviceDateFrom', 'patient_state', 'claimserviceLines_3_chargeAmount', 'claimserviceLines_4_chargeAmount', 'claim_serviceLines_1_procedureModifiers_3', 'claimserviceLines_3_units', 'claim_serviceLines_4_procedureModifiers_3', 'patient_middleName', 'claim_serviceLines_0_Diagnose_pointer', 'claim_serviceLines_3_procedureModifiers_2', 'claim_serviceLines_2_procedureModifiers_2', 'claimserviceLines_2_units', 'claim_serviceLines_3_procedureModifiers_1', 'patient_gender', 'claimserviceLines_4_units', 'claim_serviceLines_4_Diagnose_pointer', 'icdF', 'claim_serviceLines_2_serviceDateFrom', 'icdC', 'claim_serviceLines_5_procedureModifiers_0', 'claimserviceLines_4_procedureCode', 'claim_serviceLines_1_procedureModifiers_1', 'claim_serviceLines_5_procedureModifiers_2', 'icdE', 'patient_streetLine2', 'icdG']
-
-
-def add_one_day(date_string):
-    """
-    Adds one day to the given date string.
-
-    Parameters:
-    date_string (str): A date string in the format 'YYYY-MM-DD'
-
-    Returns:
-    str: A new date string with one day added
-    """
-    date_object = datetime.strptime(date_string, '%Y-%m-%d')
-    new_date_object = date_object + timedelta(days=1)
-    new_date_string = new_date_object.strftime('%Y-%m-%d')
-    return new_date_string
-
-def process_date(date):
-    year,month,day = date.split("-")
-    month = month.lstrip("0")
-    day = day.lstrip("0")
-    return month,day,year
+def cleanup_driver(driver):
+    if driver is None:
+        return
     
-def process_df(df):
-
-    length = len(df)
-    df = df.drop(drop_columns, axis=1)
-    df['Service Code'] = df['Service Code'].fillna(-1).astype(int).astype(str).replace("-1","")
-    df['Clinician NPI'] = df['Clinician NPI'].fillna(-1).astype(np.int64).astype(str).replace("-1","")
-    df['Rate'] = df['Rate'].astype(float, errors='ignore') 
-    df = (df.replace(r'^\s*$', np.nan, regex=True))
-    df.rename(columns = rename_dict, inplace = True)
-    df["claim_serviceLines_0_serviceDateFrom"] = df["claim_serviceLines_0_serviceDateFrom"].dt.strftime('%Y-%m-%d')
-    df["patient_dob"] =  pd.to_datetime(df["patient_dob"], infer_datetime_format=True)
-    df["patient_dob"] = df["patient_dob"].dt.strftime('%Y-%m-%d')
-    df["Date"] = df["claim_serviceLines_0_serviceDateFrom"]
-    for i in all_columns:
-        df[i] = [np.nan]*length
-
-    return df.to_json(orient="records") 
-
-def therapynotes_claims_data(code, user_name,pass_word, date_start,date_end):
-    
-    s_m,s_d,s_y = process_date(date_start)
-    e_m,e_d,e_y = process_date(date_end)
     try:
+        driver.close()  # Closes current window
+        driver.quit()  # Terminates the browser process completely
+        del driver  # Remove reference to the driver object
+        
+    except Exception as e:
+        print(f"Error during driver cleanup: {str(e)}")
+    
+    finally:
+        gc.collect()
+
+def login_health_app(url,username,password,secret_key):
+
+    try:
+        options = webdriver.ChromeOptions()
+        options.add_argument('--ignore-certificate-errors')	
+        options.add_argument('--headless')
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-gpu")  # Add this
+        options.add_argument("--disable-extensions")  # Add this
+        options.add_argument("--disable-infobars")  # Add this
+        options.add_argument("--disable-notifications")  # Add this
+        options.add_argument("--disable-application-cache")  # Add this
+        options.add_argument("--window-size=1280,700")  # Fixed syntax
+
+        options.add_argument("--disable-browser-side-navigation")  # Add this
+        options.add_argument("--dns-prefetch-disable")  # Add this
+        options.add_argument("--disable-setuid-sandbox")  # Add this
+        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        options.add_experimental_option("prefs",{
+            "download.default_directory" : dir_path,
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.images": 2
+            })   
+        
+        service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+        driver = webdriver.Chrome(service=service, options=options)
+        # driver = webdriver.Chrome(options=options)
+        driver.set_page_load_timeout(30)  # Set maximum page load time
+
+        # Navigate to URL and wait only for essential elements
+        driver.get(url)
+        
+        # Wait specifically for login fields (not full page load)
+        wait = WebDriverWait(driver, 10)
+        email_field = driver.find_element(By.ID, 'user_email')
+        password_field = driver.find_element(By.ID, 'user_password')
+        submit_btn = wait.until(EC.element_to_be_clickable((By.ID, 'submitBtn')))
+
+        # Perform login actions
+        email_field.send_keys(username)
+        password_field.send_keys(password)
+        submit_btn.click()
+
+        # Handle 2FA with optimized waiting
+        otp_code = get_otp(secret_key)
+        letters = ['a', 'b', 'c', 'd', 'e', 'f']
+        
+        try:
+            # Wait for OTP fields to be present (not necessarily visible)
+            wait.until(EC.presence_of_element_located((By.ID, 'code_a')))
+            
+            # Fill OTP quickly
+            for i in range(6):
+                code_field = driver.find_element(By.ID, f"code_{letters[i]}")
+                code_field.clear()
+                code_field.send_keys(otp_code[i])
+            
+            # Submit 2FA
+            commit_btn = wait.until(EC.element_to_be_clickable((By.NAME, 'commit')))
+            commit_btn.click()
+                        
+        except Exception as e:
+            logging.error(e,exc_info=True)
+            raise Exception("2FA is not setup properly or timed out")
+            
+        return driver
+
+    except Exception as e:
+        logging.error(f"Login failed: {str(e)}", exc_info=True)
+        if 'driver' in locals():
+            driver.quit()
+        raise Exception(f"Login failed: {str(e)}")
+
+
+
+
+def therapy_notes_claims_data(code, user_name,pass_word, date_start,date_end):
+    try:
+        s_m,s_d,s_y = process_date(date_start)
+        e_m,e_d,e_y = process_date(date_end)
+
         options = webdriver.ChromeOptions()
         options.add_argument('--ignore-certificate-errors')	
         options.add_argument('--headless')
@@ -84,11 +120,12 @@ def therapynotes_claims_data(code, user_name,pass_word, date_start,date_end):
         options.add_argument("--no-sandbox")
         options.add_argument("window-size=1400,900")
         options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        prefs = {"download.default_directory" : dir_path}
-        options.add_experimental_option("prefs",prefs)   
+        options.add_experimental_option("prefs",{"download.default_directory" : dir_path})   
         driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+
     except Exception as e:
         raise Exception(e)
+
     try:
         url = f"https://www.therapynotes.com/app/login/{code}/"
         driver.get(url)
@@ -119,146 +156,94 @@ def therapynotes_claims_data(code, user_name,pass_word, date_start,date_end):
     except Exception as e:
         raise Exception(e)
     finally:
-        driver.quit()
-           
-def payer_data(user,password_our,count):
+        cleanup_driver(driver)
+
+    
+def payer_data(user,password_our,count,secret_key):
     try:
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')	
-        options.add_argument('--headless')
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("window-size=1400,900")
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+        url = "https://secure.simplepractice.com/clients"
+        driver = login_health_app(url,user,password_our,secret_key)
     except Exception as e:
         raise Exception(e)
     try:
-        url = "https://secure.simplepractice.com/clients"
-        driver.get(url)
-
-        username = driver.find_element(By.ID,'user_email')
-        username.send_keys(user)
-        password = driver.find_element(By.ID,'user_password')
-        password.send_keys(password_our)
-        form = driver.find_element(By.ID,'submitBtn')
-        form.submit()
         main = []
         for counter in range(count,count+10):
-            driver.get("https://secure.simplepractice.com/frontend/insurance-plans? filter[search]=&filter[providerFilter]=search&include=insurancePayer,eligiblePayer,practicePayerAddresses,practiceInsurancePayers&page[number]={}&page[size]=50".format(counter))
-            counter = counter+1
-            a = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
-            if len(a["data"]) ==0:
+            driver.get("https://secure.simplepractice.com/frontend/insurance-plans?filter[search]=&filter[providerFilter]=search&include=insurancePayer,eligiblePayer,practicePayerAddresses,practiceInsurancePayers&page[number]={}&page[size]=50".format(counter))
+            raw_json = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
+            if len(raw_json["data"]) ==0:
                 break
-            for x in a["data"]:
-                dictionary = {}
-                dictionary["id"] = str(x["attributes"]["insuranceProviderId"])
-                dictionary["payer_name"] = x["attributes"]["name"]
-                dictionary["payer_id"] = x["attributes"]["nameWithPayer"].split("(")[-1][:-1]
-                for j in a["included"]:
-                    if j["type"] == "insurancePayers" and j["id"]==dictionary["id"]:
-                        try:
-                            dictionary["city"] = j["attributes"]["defaultAddress"]["city"]
-                            dictionary["zipcode"] = j["attributes"]["defaultAddress"]["zipcode"]
-                            dictionary["address"] = j["attributes"]["defaultAddress"]["address"]
-                            dictionary["state"] = j["attributes"]["defaultAddress"]["state"]
-                        except:
-                            dictionary["city"] = ""
-                            dictionary["address"] = ""
-                            dictionary["state"] = ""
-                            dictionary["zipcode"] = ""
-                    
-                        main.append(dictionary)
-                        break
+
+            for x in raw_json["data"]:
+                dictionary = {
+                    "id": str(x["attributes"]["insuranceProviderId"]),
+                    "payer_name": x["attributes"]["name"],
+                    "payer_id": x["attributes"]["nameWithPayer"].split("(")[-1][:-1],
+                }
+
+                for j in raw_json.get("included",[]):
+                    if j["type"] == "insurancePayers" and j["id"] == dictionary["id"]:
+                        address = j["attributes"].get("defaultAddress", {})
+                        if address:
+                            dictionary["city"] = address.get("city", "")
+                            dictionary["zipcode"] = address.get("zipcode", "")
+                            dictionary["address"] = address.get("address", "")
+                            dictionary["state"] = address.get("state", "")
+                            break  # Exit loop after finding the matching payer
+
+                main.append(dictionary)
         return main
     except Exception as e:
-        raise Exception(e)    
+        logging.error(e,exc_info=True)
+        raise Exception(e)
     finally:
-        driver.quit()
+        cleanup_driver(driver)
 
-
-def get_all_client(user,password_our):
+    
+def get_all_client(user,password_our,secret_key):
     try:
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--headless')
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("window-size=1400,900")
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+        url = "https://secure.simplepractice.com/clients"
+        driver = login_health_app(url,user,password_our,secret_key)
     except Exception as e:
         raise Exception(e)
     try:
-        url = "https://secure.simplepractice.com/clients"
-        driver.get(url)
+        base_url = "https://secure.simplepractice.com/frontend/base-clients?fields[baseClients]=emails,clinician,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge&fields[clients]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,enableEmailReminders,enableOutstandingDocumentReminders,enableSmsvoiceReminders,isMinor,reminderEmail,reminderPhone&fields[clientCouples]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,firstNameLastInitial&fields[insuranceInfo]=hieEnabled&filter[thisType]=Client,ClientCouple&include=phones,emails,insuranceInfos,clientRelationships.client,clientRelationships.relatedClient.phones,clientRelationships.relatedClient.emails,reciprocalClientRelationships.client.phones,reciprocalClientRelationships.client.emails,reciprocalClientRelationships.relatedClient&page[number]={}&page[size]=50&sort=lastName"
 
-        username = driver.find_element(By.ID,'user_email')
-        username.send_keys(user)
-        password = driver.find_element(By.ID,'user_password')
-        password.send_keys(password_our)
-        form = driver.find_element(By.ID,'submitBtn')
-        form.submit()
-
-        url = '''https://secure.simplepractice.com/frontend/base-clients?fields[baseClients]=emails,clinician,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge&fields[clients]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,enableEmailReminders,enableOutstandingDocumentReminders,enableSmsvoiceReminders,isMinor,reminderEmail,reminderPhone&fields[clientCouples]=autopayReminder,autopayInsuranceReminder,clinician,office,upcomingAppointments,latestInvoices,latestBillingDocuments,clientBillingOverview,clientAdminNote,clientDocumentRequests,viewableDocuments,channelUploadedDocuments,currentInsuranceAuthorization,insuranceAuthorizations,insuranceClaimFields,globalMonarchChannel,stripeCards,cptCodeRates,pendingAppointmentConfirmations,billingSettings,billingType,inActiveTreatment,secondaryClinicianIds,emails,clientPortalSettings,clientReferralSource,reciprocalClientRelationships,insuranceInfos,clientRelationships,phones,addresses,clientAccess,permissions,hashedId,name,firstName,lastName,middleName,initials,suffix,nickname,preferredName,legalName,defaultPhoneNumber,defaultEmailAddress,generalNotes,sex,genderInfo,ignoredForMerge,firstNameLastInitial&fields[insuranceInfo]=hieEnabled&filter[thisType]=Client,ClientCouple&include=phones,emails,insuranceInfos,clientRelationships.client,clientRelationships.relatedClient.phones,clientRelationships.relatedClient.emails,reciprocalClientRelationships.client.phones,reciprocalClientRelationships.client.emails,reciprocalClientRelationships.relatedClient&page[number]='''
-        url_2 = '''&page[size]=50&sort=lastName'''
-        full = []
-        i = 1
+        full_data = []
+        page = 1
         while True:
-            response = driver.get(url+str(i)+url_2)
+            url = base_url.format(page)
+            response = driver.get(url)
             json_data = driver.find_element(By.TAG_NAME,"body").text
             json_data = json.loads(json_data)["data"]
             if len(json_data) == 0:
                 break
-    
-            full = full + json_data
-            i = i+1
-        return full
+            full_data.extend(json_data)
+            page += 1
+        return full_data
     except Exception as e:
         raise Exception(e)
     finally:
-        driver.quit()
+        cleanup_driver(driver)
 
-def convert_date(date):
-    splitter = date.split("/")
-    mm = splitter[0]
-    dd = splitter[1]
-    yyyy = splitter[2]
-    
-    return yyyy+"-"+mm+"-"+dd
 
-def unbilled_create(from_date,end_date,user,password_our):
+
+
+def create_un_bill_user(from_date,end_date,user,password_our,secret_key):
 
     if "/" in from_date:
         from_date = convert_date(from_date)
         end_date = convert_date(end_date)
     
 
-    url = '''https://secure.simplepractice.com/frontend/insured-clients?fields%5Bclients%5D=hashedId%2CinsuranceBillingSubtype%2CpreferredName%2CinsuranceInfos&fields%5BteamMembers%5D=name%2Csuffix%2CfirstName%2ClastName%2Croles&filter%5BendDate%5D={}&filter%5BstartDate%5D={}&include=unbilledAppointments.client.insuranceInfos.insurancePlan.practiceInsurancePayers%2CunbilledAppointments.clinician%2Cclient%2CinsurancePlan%2CunbilledAppointments.appointmentClients.client.insuranceInfos.insurancePlan.practiceInsurancePayers%2CunbilledAppointments.appointmentClients.appointment&page%5Bnumber%5D={}&page%5Bsize%5D=50'''
-
+    url_template = '''https://secure.simplepractice.com/frontend/insured-clients?fields%5Bclients%5D=hashedId%2CinsuranceBillingSubtype%2CpreferredName%2CinsuranceInfos&fields%5BteamMembers%5D=name%2Csuffix%2CfirstName%2ClastName%2Croles&filter%5BendDate%5D={}&filter%5BstartDate%5D={}&include=unbilledAppointments.client.insuranceInfos.insurancePlan.practiceInsurancePayers%2CunbilledAppointments.clinician%2Cclient%2CinsurancePlan%2CunbilledAppointments.appointmentClients.client.insuranceInfos.insurancePlan.practiceInsurancePayers%2CunbilledAppointments.appointmentClients.appointment&page%5Bnumber%5D={}&page%5Bsize%5D=50'''
     try:
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--headless')
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("window-size=1400,900")
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
-
+        url = "https://secure.simplepractice.com/users/sign_in"
+        driver = login_health_app(url,user,password_our,secret_key)
     except Exception as e:
         raise Exception(e)
-    
+
     try:
-        driver.get("https://secure.simplepractice.com/users/sign_in")
         
-    
-        username = driver.find_element(By.ID,'user_email')
-        username.send_keys(user)
-        password = driver.find_element(By.ID,'user_password')
-        password.send_keys(password_our)
-        form = driver.find_element(By.ID,'submitBtn')
-        form.submit()
         time.sleep(2)
         token = driver.find_element(By.CSS_SELECTOR,'meta[name="csrf-token"]').get_attribute('content')
         time.sleep(5)
@@ -266,23 +251,28 @@ def unbilled_create(from_date,end_date,user,password_our):
         page_no = 1
         all_ids = {}
         while True:
-            url_new = url.format(end_date,from_date,page_no)
+            url_new = url_template.format(end_date,from_date,page_no)
             driver.get(url_new)
             json_data = json.loads(driver.find_element(By.CSS_SELECTOR,'pre').text)["data"]
-            for x in json_data:
-                if x["attributes"]["missingInsuranceData"] == "":
-                    for y in x["relationships"]["unbilledAppointments"]["data"]:
-                        if x["id"] not in all_ids:
-                            all_ids[x["id"]] = []
-                        all_ids[x["id"]].append(y["id"])
-            
-            if len(json_data) == 50:
-                page_no = page_no+1
-                continue
-            else:
+
+            if not json_data:
+                print("No more data. Stopping pagination.")
                 break
 
+            for client in json_data:
+                if client["attributes"].get("missingInsuranceData", "") == "":
+                    appointment_ids = [appt["id"] for appt in client["relationships"]["unbilledAppointments"]["data"]]
+                    if appointment_ids:
+                        all_ids[client["id"]] = appointment_ids
+
+            driver.execute_script("window.stop();") 
+            page_no = page_no+1
+
+        if not all_ids:
+            return "No Record Found to Convert"    
+
         all_cookies = driver.get_cookies()
+        cleanup_driver(driver)
 
         header = {
             "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -293,64 +283,41 @@ def unbilled_create(from_date,end_date,user,password_our):
             "referer":f"https://secure.simplepractice.com/billings/insurance?endDate={end_date}&startDate={from_date}",
             "cookie":"; ".join([f"{cookie['name']}={cookie['value']}" for cookie in all_cookies]),
         }
-        print(all_ids)
-        if not all_ids:
-            return "No Record Found to Convert"
+
 
         payload = json.dumps({"appointmentIds":all_ids,"submitClaims":False,"updateAllBillingZipCodes":False})    
-        r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)
-        print(r.status_code)
-        print(r.text)
+        r = requests.post("https://secure.simplepractice.com/frontend/insured-clients/batch-create",data=payload,headers=header)     
+        logging.error(r.status_code)
+        logging.error(r.text)
         if r.status_code == 201:
             return "Successful"
         else:
             return "Unsuccessful"
-
     except Exception as e:
+        logging.error(e,exc_info=True)
         raise Exception(e)
     finally:
-        driver.quit()
+        cleanup_driver(driver)
 
-
-
-def id_get(from_date,end_date,status,user,password_our):
-    end_date = add_one_day(end_date)
-    try:
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--headless')
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("window-size=1400,900")
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
-
-    except Exception as e:
-        raise Exception(e)
-    
+def get_all_claims(from_date,end_date,status,user,password_our,secret_key):
     try:
         url = "https://secure.simplepractice.com/billings/insurance/claims?endDate={}&startDate={}&status={}".format(end_date,from_date,status)
-        driver.get(url)
+        driver = login_health_app(url,user,password_our,secret_key)
+    except Exception as e:
+        raise Exception(e)
 
-        username = driver.find_element(By.ID,'user_email')
-        username.send_keys(user)
-        password = driver.find_element(By.ID,'user_password')
-        password.send_keys(password_our)
-        form = driver.find_element(By.ID,'submitBtn')
-        form.submit()
+    try:
         time.sleep(2)
+        end_date = add_one_day(end_date)
         all_data = []
-        page = 1
-        
+        page = 1    
         while True:
             url = f'https://secure.simplepractice.com/frontend/insurance-claims?fields%5BinsuranceClaims%5D=hasPendingStatus%2CclaimSubmittedDate%2Cclient%2CinsurancePlan%2CcreatedAt%2Cstatus%2CcurrentSubmission%2CclaimSupportRequest%2Cappointments%2CmanagedBillingClaim&fields%5Bclients%5D=hashedId%2CpreferredName&fields%5BinsurancePlans%5D=name&fields%5BclaimSubmissions%5D=clearinghouse%2CadditionalInformation&fields%5Bappointments%5D=managedByManagedBilling&fields%5BmanagedBillingClaim%5D=revopsClaimStatus&filter%5BclientHashedId%5D=&filter%5BinsurancePayerId%5D=&filter%5Bstatus%5D={status}&filter%5BclaimSupportStatus%5D=&filter%5BtimeRange%5D={from_date}T06%3A00%3A00.000Z%2C{end_date}T05%3A59%3A59.999Z&filter%5BincludeClaimData%5D=false&filter%5BincludeOutOfNetwork%5D=false&include=client%2CinsurancePlan%2CcurrentSubmission%2CclaimSupportRequest%2CclaimSupportRequest.claimSupportMessages%2Cappointments&page%5Bnumber%5D={page}&page%5Bsize%5D=50&sort=priority%2C-createdDate%2Cclients.lastName%2Cclients.firstName'
-
             driver.get(url)
             time.sleep(1)
             full = json.loads(driver.find_element(By.TAG_NAME,"pre").text)
-            data = full["data"]
-            included = full["included"]
-
+            data = full.get("data",[])
+            included = full.get("included",[])
             for x in data:
                 new_dict = {}
                 second_id = (x["id"])
@@ -368,35 +335,20 @@ def id_get(from_date,end_date,status,user,password_our):
                 page = page+1
         return all_data
     except Exception as e:
+        logging.error(e,exc_info=True)
         raise Exception(e)
     finally:
-        driver.quit()
+        cleanup_driver(driver)
 
 def id_get_page(from_date,end_date,number_page,user,password_our):
     try:
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--headless')
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("window-size=1400,900")
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+        url = "https://secure.simplepractice.com/billings/insurance"
+        driver = login_health_app(url,user,password_our,secret_key)
     except Exception as e:
         raise Exception(e)
 
-    try: 
-        url = "https://secure.simplepractice.com/billings/insurance"
-        driver.get(url)
-        username = driver.find_element(By.ID,'user_email')
-        username.send_keys(user)
-        password = driver.find_element(By.ID,'user_password')
-        password.send_keys(password_our)
-        form = driver.find_element(By.ID,'submitBtn')
-        form.submit()
+    try:
 
-        
-        
         driver.get(url+"#claims")
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@id='insurance-claims-daterangepicker']").click()
@@ -424,7 +376,6 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
             driver.find_element(By.XPATH,string).click()
         except:
             value_all =1
-
             
         time.sleep(2)
         all_data = []
@@ -439,34 +390,18 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
     except Exception as e:
         raise Exception(e)
     finally:
-        driver.quit()
+        cleanup_driver(driver)
 
-get_letter = {0:"A",1:"B",2:"C",3:"D",4:"E",5:"F",6:"G",7:"H",8:"I",9:"J",10:"K",11:"L"}
-def video_get(url,user,password_our):
+
+def get_insurance_client_data(url,user,password_our,secret_key):
     try:
-        options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--headless')
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
-        options.add_argument("window-size=1400,900")
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+        # url = "https://secure.simplepractice.com/billings/insurance"
+        driver = login_health_app(url,user,password_our,secret_key)
     except Exception as e:
         raise Exception(e)
-
     try:
-        x = driver.get(url)
-        
-        username = driver.find_element(By.ID,'user_email')
-        username.send_keys(user)
-        password = driver.find_element(By.ID,'user_password')
-        password.send_keys(password_our)
-        form = driver.find_element(By.ID,'submitBtn')
-        form.submit()
-
         data = {}
-        time.sleep(10)
+        time.sleep(5)
         data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
         data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
         data["payer_streetLine1"] = (driver.execute_script("return document.getElementsByName('payer[address][streetLine1]')[0].value"))
@@ -774,7 +709,40 @@ def video_get(url,user,password_our):
     except Exception as e:
         raise Exception(e)
     finally:
-        driver.quit()
+        cleanup_driver(driver)
 
 
+def submit_claim_data(url,user,password_our,secret_key,is_gt,is_ho):
+    try:
+        driver = login_health_app(url,user,password_our,secret_key)
+    except Exception as e:
+        raise Exception(e)
+    try:
+        if is_ho or is_gt:
+            driver.get(url+"/edit")
+            time.sleep(4)
+            for x in range(4):
+                data = driver.execute_script(f"return document.getElementsByName('claim[serviceLines][0][procedureModifiers][{x}]')[0].value")
+                
+                if len(data) == 0:
+                    element = driver.find_element(By.NAME,f"claim[serviceLines][0][procedureModifiers][{x}]")
+                    if is_ho:
+                        element.send_keys("HO")
+                        is_ho = False
+                        continue
+                    if is_gt:
+                        element.send_keys("GT")
+                        is_gt = False
+                        continue
 
+            time.sleep(2)
+            save_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Save')]")
+            save_button.click()
+            time.sleep(2)
+        # driver.find_element(By.ID,"ember140").click()
+        return "successful"
+    except Exception as e:
+        logging.error(e,exc_info=True)
+        raise Exception(e)
+    finally:
+        cleanup_driver(driver)
