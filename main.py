@@ -4,7 +4,7 @@ from flask import Flask,request,jsonify
 from working import *
 import logging
 import logging.handlers
-
+import json
 # initiating flask app 
 app= Flask(__name__)
 app.debug = False
@@ -82,11 +82,10 @@ def submit_claim():
         user, password = request.form["user"], request.form["password"]
         first_number, second_number = request.form["first_number"], request.form["second_number"]
         secret_key = request.form["secretKey"]
-        is_gt = request.form.get('is_gt', 'false').lower() == 'true'
-        is_ho = request.form.get('is_ho', 'false').lower() == 'true'
-
+        modifiers = json.loads(request.form.get('modifiers', {"data":[]}))["data"]
+        is_submit = request.form.get('is_submit', 'false').lower() == 'true'
         url = f"https://secure.simplepractice.com/clients/{first_number}/insurance_claims/{second_number}"
-        return jsonify({"message":submit_claim_data(url, user, password,secret_key,is_gt,is_ho)})
+        return jsonify({"message":submit_claim_data(url, user, password,secret_key,modifiers,is_submit)})
     except KeyError:
         return jsonify({"message": "Missing required fields"}), 400
     except Exception as e:
@@ -125,5 +124,4 @@ def unbill():
       
 
 if __name__ == '__main__':
-    app.run()  
-
+    app.run(host='0.0.0.0', port=8000)  # Default port is 5000 if not specified

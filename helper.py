@@ -55,3 +55,6 @@ def get_otp(secret_key):
     totp = pyotp.TOTP(secret_key)
     return totp.now()
 
+
+
+# print(get_otp("AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))

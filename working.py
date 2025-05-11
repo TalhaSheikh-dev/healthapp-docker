@@ -712,34 +712,27 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         cleanup_driver(driver)
 
 
-def submit_claim_data(url,user,password_our,secret_key,is_gt,is_ho):
+def submit_claim_data(url,user,password_our,secret_key,modifier,is_submit):
     try:
         driver = login_health_app(url,user,password_our,secret_key)
     except Exception as e:
         raise Exception(e)
     try:
-        if is_ho or is_gt:
-            driver.get(url+"/edit")
-            time.sleep(4)
-            for x in range(4):
-                data = driver.execute_script(f"return document.getElementsByName('claim[serviceLines][0][procedureModifiers][{x}]')[0].value")
-                
-                if len(data) == 0:
-                    element = driver.find_element(By.NAME,f"claim[serviceLines][0][procedureModifiers][{x}]")
-                    if is_ho:
-                        element.send_keys("HO")
-                        is_ho = False
-                        continue
-                    if is_gt:
-                        element.send_keys("GT")
-                        is_gt = False
-                        continue
+        driver.get(url+"/edit")
+        time.sleep(4)
+        for y in range(len(modifier)):
+            for x in range(len(modifier[y])):
+                hit = f"claim[serviceLines][{y}][procedureModifiers][{x}]"
+                element = driver.find_element(By.NAME,f"claim[serviceLines][{y}][procedureModifiers][{x}]")
+                element.send_keys(modifier[y][x])
 
+        time.sleep(2)
+        save_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Save')]")
+        save_button.click()
+        time.sleep(2)
+        if is_submit:
+            submit_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Submit')]").click()
             time.sleep(2)
-            save_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Save')]")
-            save_button.click()
-            time.sleep(2)
-        # driver.find_element(By.ID,"ember140").click()
         return "successful"
     except Exception as e:
         logging.error(e,exc_info=True)
