@@ -724,6 +724,7 @@ def submit_claim_data(url,user,password_our,secret_key,modifier,is_submit):
             for x in range(len(modifier[y])):
                 hit = f"claim[serviceLines][{y}][procedureModifiers][{x}]"
                 element = driver.find_element(By.NAME,f"claim[serviceLines][{y}][procedureModifiers][{x}]")
+                element.clear()
                 element.send_keys(modifier[y][x])
 
         time.sleep(2)
