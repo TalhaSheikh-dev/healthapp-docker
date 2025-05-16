@@ -403,7 +403,9 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         data = {}
         time.sleep(10)
         data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
+        print("done1")
         data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
+        print("done2")
         # data["payer_streetLine1"] = (driver.execute_script("return document.getElementsByName('payer[address][streetLine1]')[0].value"))
         # data["payer_streetLine2"] = (driver.execute_script("return document.getElementsByName('payer[address][streetLine2]')[0].value"))
         # data["payer_city"] = (driver.execute_script("return document.getElementsByName('payer[address][city]')[0].value"))
@@ -411,7 +413,9 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         # data["payer_zip"] = (driver.execute_script("return document.getElementsByName('payer[address][zip]')[0].value"))
         # data["insured_id"] = (driver.execute_script("return document.getElementsByName('subscriber[id]')[0].value"))
         data["patient_lastName"] = (driver.execute_script("return document.getElementsByName('dependent[lastName]')[0].value"))
+        print("done3")
         data["patient_firstName"] = (driver.execute_script("return document.getElementsByName('dependent[firstName]')[0].value"))
+        print("done4")
         # data["patient_middleName"] = (driver.execute_script("return document.getElementsByName('dependent[middleName]')[0].value"))
         # data["patient_dob"] = (driver.execute_script("return document.getElementsByName('dependent[dob]')[0].value"))
 
@@ -646,6 +650,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
             key = "claimserviceLines_" + str(i) +"_placeOfService" 	
             name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][placeOfService]')[0].options[document.getElementsByName('claim[serviceLines][" + str(i)+"][placeOfService]')[0].selectedIndex].text"      
             data[key] = (driver.execute_script(name)) 
+            print("done56")
             #-----
 
             # key = "claimserviceLines_" + str(i) +"_procedureCode" 	
@@ -675,6 +680,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
                 key = "claim_serviceLines_" + str(i) +"_procedureModifiers_"+str(x) 	
                 name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureModifiers]["+str(x)+"]')[0].value"
                 data[key] = (driver.execute_script(name))
+                print("done78")
             # --------
 
             # key = "claimserviceLines_" + str(i) +"_chargeAmount" 	
