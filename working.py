@@ -401,7 +401,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         raise Exception(e)
     try:
         data = {}
-        time.sleep(7)
+        time.sleep(10)
         data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
         data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
         # data["payer_streetLine1"] = (driver.execute_script("return document.getElementsByName('payer[address][streetLine1]')[0].value"))
