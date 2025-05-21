@@ -108,6 +108,7 @@ def login_health_app(url,username,password,secret_key):
 
 
 
+
 def therapy_notes_claims_data(code, user_name,pass_word, date_start,date_end):
     try:
         s_m,s_d,s_y = process_date(date_start)
@@ -393,6 +394,7 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
         cleanup_driver(driver)
 
 
+
 def get_insurance_client_data(url,user,password_our,secret_key):
     try:
         # url = "https://secure.simplepractice.com/billings/insurance"
@@ -401,8 +403,13 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         raise Exception(e)
     try:
         data = {}
-        time.sleep(10)
-        data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
+        time.sleep(5)
+        try:
+            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
+        except:
+            driver.get(url)
+            time.sleep(5)
+            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
         print("done1")
         data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
         print("done2")
@@ -713,6 +720,11 @@ def get_insurance_client_data(url,user,password_our,secret_key):
     finally:
         cleanup_driver(driver)
 
+url = "https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096"
+user = "info+1@gina4med.com"
+password_our = "Rakovski@345"
+secret_key = "AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"
+print(get_insurance_client_data(url,user,password_our,secret_key))
 
 def submit_claim_data(url,user,password_our,secret_key,modifier,is_submit):
     try:
