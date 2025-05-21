@@ -720,11 +720,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
     finally:
         cleanup_driver(driver)
 
-url = "https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096"
-user = "info+1@gina4med.com"
-password_our = "Rakovski@345"
-secret_key = "AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"
-print(get_insurance_client_data(url,user,password_our,secret_key))
+
 
 def submit_claim_data(url,user,password_our,secret_key,modifier,is_submit):
     try:
