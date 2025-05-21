@@ -407,6 +407,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         try:
             data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
         except:
+            print("here in new line")
             driver.get(url)
             time.sleep(5)
             data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
