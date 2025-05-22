@@ -4,7 +4,6 @@ import time
 import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 import requests
 import pandas as pd
@@ -13,6 +12,7 @@ from config import *
 from helper import *
 import logging
 import gc
+import tempfile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -24,7 +24,8 @@ def cleanup_driver(driver):
         driver.close()  # Closes current window
         driver.quit()  # Terminates the browser process completely
         del driver  # Remove reference to the driver object
-        
+        if 'temp_dir' in locals():
+            shutil.rmtree(temp_dir, ignore_errors=True)
     except Exception as e:
         print(f"Error during driver cleanup: {str(e)}")
     
@@ -45,7 +46,8 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument("--disable-notifications")  # Add this
         options.add_argument("--disable-application-cache")  # Add this
         options.add_argument("--window-size=1280,700")  # Fixed syntax
-
+        temp_dir = tempfile.mkdtemp()
+        options.add_argument(f"--user-data-dir={temp_dir}")
         options.add_argument("--disable-browser-side-navigation")  # Add this
         options.add_argument("--dns-prefetch-disable")  # Add this
         options.add_argument("--disable-setuid-sandbox")  # Add this
