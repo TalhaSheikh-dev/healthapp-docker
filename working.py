@@ -49,7 +49,7 @@ def cleanup_driver(driver):
     except Exception as e:
         logging.error(f"Cleanup error: {str(e)}")
     finally:
-        kill_chrome_processes()
+        # kill_chrome_processes()  
         gc.collect()
 
 def login_health_app(url,username,password,secret_key):
