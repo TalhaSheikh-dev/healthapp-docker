@@ -74,16 +74,16 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-features=NetworkService')
-        # options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
         options.add_experimental_option("prefs",{
             "download.default_directory" : dir_path,
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.images": 2
             })   
         
-        # service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
-        # driver = webdriver.Chrome(service=service, options=options)
-        driver = webdriver.Chrome(options=options)
+        service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+        driver = webdriver.Chrome(service=service, options=options)
+        # driver = webdriver.Chrome(options=options)
         driver.set_page_load_timeout(30)  # Set maximum page load time
 
         # Navigate to URL and wait only for essential elements
