@@ -13,31 +13,51 @@ from helper import *
 import logging
 import gc
 import tempfile
+import psutil
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+def kill_chrome_processes():
+    """Forcefully kill any remaining Chrome processes"""
+    try:
+        for proc in psutil.process_iter(['name']):
+            if proc.info['name'] and ('chrome' in proc.info['name'].lower() or 'chromedriver' in proc.info['name'].lower()):
+                try:
+                    proc.kill()
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+    except Exception as e:
+        logging.warning(f"Error killing Chrome processes: {str(e)}")
+
 def cleanup_driver(driver):
+    """Enhanced driver cleanup"""
     if driver is None:
         return
     
     try:
-        driver.close()  # Closes current window
-        driver.quit()  # Terminates the browser process completely
-        del driver  # Remove reference to the driver object
-        if 'temp_dir' in locals():
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        try:
+            driver.close()
+        except:
+            pass
+        
+        try:
+            driver.quit()
+        except:
+            pass
+        
+        del driver
     except Exception as e:
-        print(f"Error during driver cleanup: {str(e)}")
-    
+        logging.error(f"Cleanup error: {str(e)}")
     finally:
+        kill_chrome_processes()
         gc.collect()
 
 def login_health_app(url,username,password,secret_key):
 
     try:
         options = webdriver.ChromeOptions()
-        options.add_argument('--ignore-certificate-errors')	
-        options.add_argument('--headless')
+        # options.add_argument('--ignore-certificate-errors')	
+        options.add_argument('--headless=new')
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-gpu")  # Add this
@@ -46,11 +66,13 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument("--disable-notifications")  # Add this
         options.add_argument("--disable-application-cache")  # Add this
         options.add_argument("--window-size=1280,700")  # Fixed syntax
-        temp_dir = tempfile.mkdtemp()
-        options.add_argument(f"--user-data-dir={temp_dir}")
+        options.add_argument("--incognito")
         options.add_argument("--disable-browser-side-navigation")  # Add this
         options.add_argument("--dns-prefetch-disable")  # Add this
         options.add_argument("--disable-setuid-sandbox")  # Add this
+        options.add_argument('--single-process')
+        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-features=NetworkService')
         options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
         options.add_experimental_option("prefs",{
             "download.default_directory" : dir_path,
