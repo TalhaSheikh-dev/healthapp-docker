@@ -56,7 +56,7 @@ def login_health_app(url,username,password,secret_key):
 
     try:
         options = webdriver.ChromeOptions()
-        # options.add_argument('--ignore-certificate-errors')	
+        options.add_argument('--ignore-certificate-errors')	
         options.add_argument('--headless=new')
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--no-sandbox")
@@ -70,19 +70,20 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument("--disable-browser-side-navigation")  # Add this
         options.add_argument("--dns-prefetch-disable")  # Add this
         options.add_argument("--disable-setuid-sandbox")  # Add this
-        options.add_argument('--single-process')
         options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-background-timer-throttling')
+        options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-features=NetworkService')
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        # options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
         options.add_experimental_option("prefs",{
             "download.default_directory" : dir_path,
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.images": 2
             })   
         
-        service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
-        driver = webdriver.Chrome(service=service, options=options)
-        # driver = webdriver.Chrome(options=options)
+        # service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+        # driver = webdriver.Chrome(service=service, options=options)
+        driver = webdriver.Chrome(options=options)
         driver.set_page_load_timeout(30)  # Set maximum page load time
 
         # Navigate to URL and wait only for essential elements
@@ -746,6 +747,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         cleanup_driver(driver)
 
 
+# print(get_insurance_client_data("https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096","info+1@gina4med.com","Rakovski@345","AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))
 
 def submit_claim_data(url,user,password_our,secret_key,modifier,is_submit):
     try:
