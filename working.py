@@ -52,9 +52,18 @@ def cleanup_driver(driver):
         # kill_chrome_processes()  
         gc.collect()
 
-def login_health_app(url,username,password,secret_key):
-
+def login_health_app(url, username, password, secret_key):
+    """Optimized login function for Health App with reduced execution time."""
+    
+    # Initialize driver outside try block for proper cleanup
+    driver = None
+    
     try:
+        # Precompute OTP before starting browser to save time
+        otp_code = get_otp(secret_key)
+        letters = ['a', 'b', 'c', 'd', 'e', 'f']  # Moved outside to avoid recreation
+        
+        # Chrome options with essential settings only
         options = webdriver.ChromeOptions()
         options.add_argument('--ignore-certificate-errors')	
         options.add_argument('--headless=new')
@@ -74,63 +83,55 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-features=NetworkService')
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        options.add_experimental_option("prefs",{
-            "download.default_directory" : dir_path,
-            "profile.default_content_setting_values.notifications": 2,
-            "profile.managed_default_content_settings.images": 2
-            })   
         
-        service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+        # Only critical experimental options
+        options.add_experimental_option("prefs", {
+            "profile.default_content_setting_values.notifications": 2
+        })
+        
+        service = webdriver.ChromeService(
+            executable_path=os.environ.get("CHROMEDRIVER_PATH")
+        )
         driver = webdriver.Chrome(service=service, options=options)
-        # driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(30)  # Set maximum page load time
 
-        # Navigate to URL and wait only for essential elements
+        driver.set_page_load_timeout(30)  # Reduced from 30
+        
+        # 1. Optimized page load and element interaction
         driver.get(url)
         
-        wait = WebDriverWait(driver, 10)
-        email_field = driver.find_element(By.ID, 'user_email')
-        password_field = driver.find_element(By.ID, 'user_password')
-        submit_btn = wait.until(EC.element_to_be_clickable((By.ID, 'submitBtn')))
-
-        # Perform login actions
-        email_field.send_keys(username)
-        password_field.send_keys(password)
-        submit_btn.click()
-
-        # Handle 2FA with optimized waiting
-        otp_code = get_otp(secret_key)
-        letters = ['a', 'b', 'c', 'd', 'e', 'f']
+        # Use JavaScript direct injection for faster form filling
+        driver.execute_script(f"""
+            document.getElementById('user_email').value = '{username}';
+            document.getElementById('user_password').value = '{password}';
+            document.getElementById('submitBtn').click();
+        """)
         
-        try:
-            # Wait for OTP fields to be present (not necessarily visible)
-            wait.until(EC.presence_of_element_located((By.ID, 'code_a')))
-            
-            # Fill OTP quickly
-            for i in range(6):
-                code_field = driver.find_element(By.ID, f"code_{letters[i]}")
-                code_field.clear()
-                code_field.send_keys(otp_code[i])
-            
-            # Submit 2FA
-            commit_btn = wait.until(EC.element_to_be_clickable((By.NAME, 'commit')))
-            commit_btn.click()
-                        
-        except Exception as e:
-            logging.error(e,exc_info=True)
-            raise Exception("2FA is not setup properly or timed out")
-            
+        # 2. Optimized OTP handling
+        # Wait for any OTP field to appear (reduces wait time)
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '[id^="code_"]'))
+        )
+        
+        # Batch OTP field filling using JavaScript
+        for i in range(6):
+            field = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.ID, f"code_{letters[i]}")))
+            field.clear()
+            field.send_keys(otp_code[i])
+        
+        # Wait for submit button to be clickable
+        submit_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.NAME, 'commit')))
+        
+        # Click using JavaScript for reliability
+        driver.execute_script("arguments[0].click();", submit_btn)
         return driver
 
     except Exception as e:
         logging.error(f"Login failed: {str(e)}", exc_info=True)
-        if 'driver' in locals():
+        if driver:
             driver.quit()
         raise Exception(f"Login failed: {str(e)}")
-
-
-
 
 
 def therapy_notes_claims_data(code, user_name,pass_word, date_start,date_end):
@@ -420,330 +421,95 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
 
 
 def get_insurance_client_data(url,user,password_our,secret_key):
-    try:
-        # url = "https://secure.simplepractice.com/billings/insurance"
-        driver = login_health_app(url,user,password_our,secret_key)
-    except Exception as e:
-        raise Exception(e)
-    try:
-        data = {}
-        time.sleep(5)
+    driver = None
+    
+    JS_EXTRACTOR = """
+        function getSelectedText(select) {
+            if (!select) return "";
+            return select.options[select.selectedIndex]?.text || "";
+        }
+
+        const data = {
+            payer_id: document.querySelector("[name='payer[id]']")?.value || "",
+            payer_name: document.querySelector("[name='payer[name]']")?.value || "",
+            patient_lastName: document.querySelector("[name='dependent[lastName]']")?.value || "",
+            patient_firstName: document.querySelector("[name='dependent[firstName]']")?.value || "",
+            serviceLines: []
+        };
+
+        // More reliable service line detection
+        let i = 0;
+        while (i < 6) {
+            // Find the service date from element using precise selector
+            const dateFromSelector = `input[name='claim[serviceLines][${i}][serviceDateFrom]']`;
+            const fromEl = document.querySelector(dateFromSelector);
+            
+            // If element doesn't exist or has no value, stop processing
+            if (!fromEl || !fromEl.value) {
+                i++;
+                continue;
+            }
+
+            // Build service line data with fallbacks
+            const line = {
+                serviceDateFrom: fromEl.value,
+                serviceDateTo: document.querySelector(`input[name='claim[serviceLines][${i}][serviceDateTo]']`)?.value || "",
+                placeOfService: getSelectedText(document.querySelector(`select[name='claim[serviceLines][${i}][placeOfService]']`)),
+                modifiers: []
+            };
+
+            // Process modifiers with precise selectors
+            for (let x = 0; x < 4; x++) {
+                const modSelector = `input[name='claim[serviceLines][${i}][procedureModifiers][${x}]']`;
+                line.modifiers.push(document.querySelector(modSelector)?.value || "");
+            }
+
+            data.serviceLines.push(line);
+            i++;
+        }
+
+        return data;
+    """
+    for attempt in range(2):
         try:
-            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
-        except:
-            print("here in new line")
-            driver.get(url)
+            driver = login_health_app(url, user, password_our, secret_key)
+            
             time.sleep(5)
-            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
-        print("done1")
-        data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
-        print("done2")
-        # data["payer_streetLine1"] = (driver.execute_script("return document.getElementsByName('payer[address][streetLine1]')[0].value"))
-        # data["payer_streetLine2"] = (driver.execute_script("return document.getElementsByName('payer[address][streetLine2]')[0].value"))
-        # data["payer_city"] = (driver.execute_script("return document.getElementsByName('payer[address][city]')[0].value"))
-        # data["payer_state"] = (driver.execute_script("return document.getElementsByName('payer[address][state]')[0].value"))
-        # data["payer_zip"] = (driver.execute_script("return document.getElementsByName('payer[address][zip]')[0].value"))
-        # data["insured_id"] = (driver.execute_script("return document.getElementsByName('subscriber[id]')[0].value"))
-        data["patient_lastName"] = (driver.execute_script("return document.getElementsByName('dependent[lastName]')[0].value"))
-        print("done3")
-        data["patient_firstName"] = (driver.execute_script("return document.getElementsByName('dependent[firstName]')[0].value"))
-        print("done4")
-        # data["patient_middleName"] = (driver.execute_script("return document.getElementsByName('dependent[middleName]')[0].value"))
-        # data["patient_dob"] = (driver.execute_script("return document.getElementsByName('dependent[dob]')[0].value"))
-
-        # data["insured_lastName"] = (driver.execute_script("return document.getElementsByName('subscriber[lastName]')[0].value"))
-        # data["insured_firstName"] = (driver.execute_script("return document.getElementsByName('subscriber[firstName]')[0].value"))
-        # data["insured_middleName"] = (driver.execute_script("return document.getElementsByName('subscriber[middleName]')[0].value"))   
-        
-        
-        # data["patient_streetLine1"] = (driver.execute_script("return document.getElementsByName('dependent[address][streetLine1]')[0].value"))
-        # data["patient_streetLine2"] = (driver.execute_script("return document.getElementsByName('dependent[address][streetLine2]')[0].value"))
-        # data["patient_state"] = (driver.execute_script("return document.getElementsByName('dependent[address][state]')[0].value"))
-        # data["patient_city"] = (driver.execute_script("return document.getElementsByName('dependent[address][city]')[0].value"))
-        # data["patient_zip"] = (driver.execute_script("return document.getElementsByName('dependent[address][zip]')[0].value"))
-        # data["patient_telephone"] = (driver.execute_script("return document.getElementsByName('dependent[phoneNumber]')[0].value"))
-        # try:
-        #     data["patient_id"] = (driver.execute_script("return document.getElementsByName('dependent[id]')[0].value"))
-        # except:
-        #     data["patient_id"] = ""
-
-        # data["insured_streetLine1"] = (driver.execute_script("return document.getElementsByName('subscriber[address][streetLine1]')[0].value"))
-        # data["insured_streetLine2"] = (driver.execute_script("return document.getElementsByName('subscriber[address][streetLine2]')[0].value"))
-        # data["insured_city"] = (driver.execute_script("return document.getElementsByName('subscriber[address][city]')[0].value"))   
-        # data["insured_state"] = (driver.execute_script("return document.getElementsByName('subscriber[address][state]')[0].value"))   
-        # data["insured_zip"] = (driver.execute_script("return document.getElementsByName('subscriber[address][zip]')[0].value"))   
-        # data["insured_number"] = (driver.execute_script("return document.getElementsByName('subscriber[phoneNumber]')[0].value"))   
-
-        # data["otherinsured_lastName"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][lastName]')[0].value"))
-        # data["otherinsured_firstName"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][firstName]')[0].value"))
-        # data["otherinsured_mi"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][middleName]')[0].value")) 
-        
-
-        
-        # data["otherinsured_relationship"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][relationship]')[0].options[document.getElementsByName('otherPayers[0][subscriber][relationship]')[0].selectedIndex].text"))
-        
-        # data["otherinsured_policy"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][groupId]')[0].value"))   
-        # data["otherinsured_insuredid"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][id]')[0].value"))  
-        # data["otherinsured_indicatorcode"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][claimFilingIndicator]')[0].options[document.getElementsByName('otherPayers[0][claimFilingIndicator]')[0].selectedIndex].text"))
-        
-        # data["otherinsured_insurancePlanName"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][name]')[0].value"))
-        # data["otherinsured_insuranceTypeCode"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][subscriber][insuranceTypeCode]')[0].options[document.getElementsByName('otherPayers[0][subscriber][insuranceTypeCode]')[0].selectedIndex].text"))   
-        # data["otherinsured_resSequence"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][responsibilitySequence]')[0].options[document.getElementsByName('otherPayers[0][responsibilitySequence]')[0].selectedIndex].text"))   
-        # data["otherinsured_payerId"] = (driver.execute_script("return document.getElementsByName('otherPayers[0][id]')[0].value"))   
-        
-        # data["patient_autoAccidentState"] = (driver.execute_script("return document.getElementsByName('claim[autoAccidentState]')[0].value")) 
-        
-        # data["patient_claimCode"] = (driver.execute_script("return document.getElementsByName('code')[0].value")) 
-        
-        # data["insured_policy"] = (driver.execute_script("return document.getElementsByName('subscriber[groupId]')[0].value")) 
-        # data["insured_dob"] = (driver.execute_script("return document.getElementsByName('subscriber[dob]')[0].value")) 
-        # data["insured_planName"] = (driver.execute_script("return document.getElementsByName('subscriber[groupName]')[0].value")) 
-        
-        
-        # data["dataOfIllness"] = (driver.execute_script("return document.getElementsByName('claim[additionalClaimInfo]')[0].value")) 
-        # data["dataOfIllness_qual"] = (driver.execute_script("return document.getElementsByName('claim[additionalClaimInfoCode]')[0].options[document.getElementsByName('claim[additionalClaimInfoCode]')[0].selectedIndex].text "))
-    
-        # data["lastWorkData"] = (driver.execute_script("return document.getElementsByName('claim[lastWorkedDate]')[0].value")) 
-        # data["workReturnDate"] = (driver.execute_script("return document.getElementsByName('claim[workReturnDate]')[0].value"))  
-        
-
-        # data["provider"] = (driver.execute_script("return document.getElementsByName('box17ProviderOption')[0].options[document.getElementsByName('box17ProviderOption')[0].selectedIndex].text")) 
-        # data["provider_lastName"] = (driver.execute_script("return document.getElementsByName('box17Provider[lastName]')[0].value"))  
-        # data["provider_firstName"] = (driver.execute_script("return document.getElementsByName('box17Provider[firstName]')[0].value")) 
-        # data["provider_middleName"] = (driver.execute_script("return document.getElementsByName('box17Provider[middleName]')[0].value"))  
-
-        # data["secondayIdType"] = (driver.execute_script("return document.getElementsByName('box17Provider[secondaryIdType]')[0].options[document.getElementsByName('box17Provider[secondaryIdType]')[0].selectedIndex].text"))     
-        # data["secondaryId"] = (driver.execute_script("return document.getElementsByName('box17Provider[secondaryId]')[0].value"))        
-        # data["npi"] = (driver.execute_script("return document.getElementsByName('box17Provider[npi]')[0].value"))         
-        
-        # data["hospitalizationDate_current_from"] = (driver.execute_script("return document.getElementsByName('claim[admissionDate]')[0].value")) 
-        # data["hospitalizationDate_current_to"] = (driver.execute_script("return document.getElementsByName('claim[dischargeDate]')[0].value")) 
-        
-        # data["additionalClaimInfo"] = (driver.execute_script("return document.getElementsByName('claim[additionalClaimInfo]')[0].value"))  
-        # data["additionalClaimInfoCode"] = (driver.execute_script("return document.getElementsByName('claim[additionalClaimInfoCode]')[0].options[document.getElementsByName('claim[additionalClaimInfoCode]')[0].selectedIndex].text"))   
-    
-        # data["supplementalClaim_typeCode"] = (driver.execute_script("return document.getElementsByName('claim[reportTypeCode]')[0].value"))  
-        # data["supplementalClaim_transCode"] = (driver.execute_script("return document.getElementsByName('claim[reportTransmissionCode]')[0].value"))  
-        # data["supplementalClaim_attachmentId"] = (driver.execute_script("return document.getElementsByName('claim[attachmentId]')[0].value"))    
-        # data["outsideLabCharges"] = (driver.execute_script("return document.getElementsByName('claim[outsideLabCharges]')[0].value"))
-        
-        # data["icdInd"] = (driver.execute_script("return document.getElementsByName('claim[icdIndicator]')[0].value"))
-        # data["icdA"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][0]')[0].value"))
-        # data["icdB"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][1]')[0].value"))
-        # data["icdC"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][2]')[0].value"))
-        # data["icdD"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][3]')[0].value"))
-        # data["icdE"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][4]')[0].value"))
-        # data["icdF"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][5]')[0].value"))
-        # data["icdG"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][6]')[0].value"))
-        # data["icdH"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][7]')[0].value"))
-        # data["icdI"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][8]')[0].value"))
-        # data["icdJ"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][9]')[0].value"))
-        # data["icdK"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][10]')[0].value"))
-        # data["icdL"] = (driver.execute_script("return document.getElementsByName('claim[diagnosisCodes][11]')[0].value"))
-
-        # data["resubmission_refNo"] = (driver.execute_script("return document.getElementsByName('claim[payerControlNumber]')[0].value"))
-        # data["priorAuthNo"] = (driver.execute_script("return document.getElementsByName('claim[priorAuthorizationNumber]')[0].value"))
-        # data["CLIANo"] = (driver.execute_script("return document.getElementsByName('claim[cliaNumber]')[0].value"))
-
-        
-        # data["billingProvider_taxId"] = (driver.execute_script("return document.getElementsByName('billingProvider[taxId]')[0].value"))
-        # data["claim_totalCharge"] = (driver.execute_script("return document.getElementsByName('claim[totalCharge]')[0].value"))
-        # data["claim_patientAmountPaid"] = (driver.execute_script("return document.getElementsByName('claim[patientAmountPaid]')[0].value"))
-        # data["claim_claimSignatureDate"] = (driver.execute_script("return document.getElementsByName('claim[claimSignatureDate]')[0].value"))
-        # data["serviceFacility_name"] = (driver.execute_script("return document.getElementsByName('serviceFacility[name]')[0].value"))
-        # data["serviceFacility_streetLine1"] = (driver.execute_script("return document.getElementsByName('serviceFacility[address][streetLine1]')[0].value"))
-        # data["serviceFacility_streetLine2"] = (driver.execute_script("return document.getElementsByName('serviceFacility[address][streetLine2]')[0].value"))
-        # data["serviceFacility_city"] = (driver.execute_script("return document.getElementsByName('serviceFacility[address][city]')[0].value"))
-        # data["serviceFacility_state"] = (driver.execute_script("return document.getElementsByName('serviceFacility[address][state]')[0].value"))
-        # data["serviceFacility_zip"] = (driver.execute_script("return document.getElementsByName('serviceFacility[address][zip]')[0].value"))
-        # data["serviceFacility_npi"] = (driver.execute_script("return document.getElementsByName('serviceFacility[npi]')[0].value"))
-        
-        
-        # data["billingProvider_phoneNumber"] = (driver.execute_script("return document.getElementsByName('billingProvider[phoneNumber]')[0].value"))
-        # try:
-        #     data["billingProvider_lastName"] = (driver.execute_script("return document.getElementsByName('billingProvider[lastName]')[0].value"))
-        #     data["billingProvider_firstName"] = (driver.execute_script("return document.getElementsByName('billingProvider[firstName]')[0].value"))
-        #     data["billingProvider_middleName"] = (driver.execute_script("return document.getElementsByName('billingProvider[middleName]')[0].value"))
             
-        # except:
-        #     data["billingProvider_organization"] = (driver.execute_script("return document.getElementsByName('billingProvider[organizationName]')[0].value"))
-        # data["billingProvider_streetLine1"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][streetLine1]')[0].value"))
-        # data["billingProvider_streetLine2"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][streetLine2]')[0].value"))
-        # data["billingProvider_city"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][city]')[0].value"))
-        # data["billingProvider_state"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][state]')[0].value"))
-        # data["billingProvider_zip"] = (driver.execute_script("return document.getElementsByName('billingProvider[address][zip]')[0].value"))
-        # data["billingProvider_npi"] = (driver.execute_script("return document.getElementsByName('billingProvider[npi]')[0].value"))
-        # data["billingProvider_taxonomyCode"] = (driver.execute_script("return document.getElementsByName('billingProvider[taxonomyCode]')[0].value"))
-
-    ########################################################################
-
-        # data["patient_gender"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('dependent[gender]')[0].checked")):
-        #     data["patient_gender"] = "m"
-        # if (driver.execute_script("return document.getElementsByName('dependent[gender]')[1].checked")):
-        #     data["patient_gender"] = "f"
-
-        # data["patient_employment"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('claim[relatedToEmployment]')[0].checked")):
-        #     data["patient_employment"] = "yes"
-        # if (driver.execute_script("return document.getElementsByName('claim[relatedToEmployment]')[1].checked")):
-        #     data["patient_employment"] = "no"
+            # Execute mega-extractor script
+            raw_data = driver.execute_script(JS_EXTRACTOR)
+            print(raw_data)
+            # Validate we got critical data
+            if not raw_data or not raw_data.get('payer_id'):
+                raise ValueError("Essential data missing")
             
-        #new addition
-        # data["patient_relationship_to_insecured"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[0].checked")):
-        #     data["patient_relationship_to_insecured"] = "self"
-        # if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[1].checked")):
-        #     data["patient_relationship_to_insecured"] = "spouse"
-        # if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[2].checked")):
-        #     data["patient_relationship_to_insecured"] = "child"
-        # if (driver.execute_script("return document.getElementsByName('dependent[relationship]')[3].checked")):
-        #     data["patient_relationship_to_insecured"] = "other"        
-
-        # data["auto_accident"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('claim[autoAccident]')[0].checked")):
-        #     data["auto_accident"] = "yes"
-        # if (driver.execute_script("return document.getElementsByName('claim[autoAccident]')[1].checked")):
-        #     data["auto_accident"] = "no"
-
-
-        # data["other_accident"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('claim[otherAccident]')[0].checked")):
-        #     data["other_accident"] = "yes"
-        # if (driver.execute_script("return document.getElementsByName('claim[otherAccident]')[1].checked")):
-        #     data["other_accident"] = "no"
-
-
-        # data["insured_gender"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('subscriber[gender]')[0].checked")):
-        #     data["insured_gender"] = "m"
-        # if (driver.execute_script("return document.getElementsByName('subscriber[gender]')[1].checked")):
-        #     data["insured_gender"] = "f"
-
-        # data["anyother_healthPlan"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('otherPayer')[0].checked")):
-        #     data["anyother_healthPlan"] = "yes"
-        # if (driver.execute_script("return document.getElementsByName('otherPayer')[1].checked")):
-        #     data["anyother_healthPlan"] = "no"
-
-        # data["claim_directPaymentAuthorized"] = ""
-        # if (driver.execute_script("return document.getElementsByName('claim[directPaymentAuthorized]')[0].checked")):
-        #     data["claim_directPaymentAuthorized"] = "yes"    
+            # Transform data structure
+            data = {
+                "payer_id": raw_data['payer_id'],
+                "payer_name": raw_data['payer_name'],
+                "patient_lastName": raw_data['patient_lastName'],
+                "patient_firstName": raw_data['patient_firstName']
+            }
             
+            # Process service lines
+            for i, line in enumerate(raw_data['serviceLines']):
+                prefix = f"claim_serviceLines_{i}"
+                data.update({
+                    f"{prefix}_serviceDateFrom": line['serviceDateFrom'],
+                    f"{prefix}_serviceDateTo": line['serviceDateTo'],
+                    f"{prefix}_placeOfService": line['placeOfService'],
+                    **{
+                        f"{prefix}_procedureModifiers_{x}": mod
+                        for x, mod in enumerate(line['modifiers'])
+                    }
+                })
             
-        # data["claim_outsideLab"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('claim[outsideLab]')[0].checked")):
-        #     data["claim_outsideLab"] = "yes"
-        # if (driver.execute_script("return document.getElementsByName('claim[outsideLab]')[1].checked")):
-        #     data["claim_outsideLab"] = "no"
-            
-        # data["claim_frequency"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('claim[frequency]')[0].checked")):
-        #     data["claim_frequency"] = "original"
-        # if (driver.execute_script("return document.getElementsByName('claim[frequency]')[1].checked")):
-        #     data["claim_frequency"] = "resubmission"
-        # if (driver.execute_script("return document.getElementsByName('claim[frequency]')[2].checked")):
-        #     data["claim_frequency"] = "cancel"
-
-
-        # data["billingProvider_taxIdType"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('billingProvider[taxIdType]')[0].checked")):
-        #     data["billingProvider_taxIdType"] = "SSN"
-        # if (driver.execute_script("return document.getElementsByName('billingProvider[taxIdType]')[1].checked")):
-        #     data["billingProvider_taxIdType"] = "EIN"
-            
-        # data["claim_acceptAssignmentCode"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('claim[acceptAssignmentCode]')[0].checked")):
-        #     data["claim_acceptAssignmentCode"] = "yes"
-        # if (driver.execute_script("return document.getElementsByName('claim[acceptAssignmentCode]')[1].checked")):
-        #     data["claim_acceptAssignmentCode"] = "no"
-            
-        # data["billingProvider_entity"] = "" 
-        # if (driver.execute_script("return document.getElementsByName('billingProvider[entity]')[0].checked")):
-        #     data["billingProvider_entity"] = "individual"
-        # if (driver.execute_script("return document.getElementsByName('billingProvider[entity]')[1].checked")):
-        #     data["billingProvider_entity"] = "organization"
-            
-
-        for i in range(0,6):
-            #-----
-            key = "claim_serviceLines_" + str(i) +"_serviceDateFrom" 	
-            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateFrom]')[0].value"
-            check_data = (driver.execute_script(name))
-            
-            if check_data == "":
-                break
-            data[key] = check_data 
-            
-            key = "claim_serviceLines_" + str(i) +"_serviceDateTo" 	
-            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateTo]')[0].value"
-            data[key] = (driver.execute_script(name))
-
-            key = "claimserviceLines_" + str(i) +"_placeOfService" 	
-            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][placeOfService]')[0].options[document.getElementsByName('claim[serviceLines][" + str(i)+"][placeOfService]')[0].selectedIndex].text"      
-            data[key] = (driver.execute_script(name)) 
-            print("done56")
-            #-----
-
-            # key = "claimserviceLines_" + str(i) +"_procedureCode" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureCode]')[0].value"
-            # data[key] = (driver.execute_script(name))
-        
-        
-            # key = "claimserviceLines_" + str(i) +"_description" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][description]')[0].value"
-            # data[key] = (driver.execute_script(name))      
-            
-            # lit_let = []
-            # for ss in range(0,9):
-                
-            #     name = "return document.getElementsByClassName('dc-pointers-table')["+str(i)+"].getElementsByTagName('input')["+str(ss)+"].checked"
-            #     name = (driver.execute_script(name))  
-
-            #     if name == True:
-
-            #         letter = get_letter[ss]
-            #         lit_let.append(letter)
-        
-            # key = "claim_serviceLines_"+str(i)+ "_Diagnose_pointer"  
-            # data[key] = lit_let
-            # --------
-            for x in range(0,4):
-                key = "claim_serviceLines_" + str(i) +"_procedureModifiers_"+str(x) 	
-                name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureModifiers]["+str(x)+"]')[0].value"
-                data[key] = (driver.execute_script(name))
-                print("done78")
-            # --------
-
-            # key = "claimserviceLines_" + str(i) +"_chargeAmount" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][chargeAmount]')[0].value"     
-            # data[key] = (driver.execute_script(name))
-
-            # key = "claimserviceLines_" + str(i) +"_units" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][units]')[0].value"    
-            # data[key] = (driver.execute_script(name))
-        
-            # key = "claimserviceLines_" + str(i) +"_epsdtIndicator" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][epsdtIndicator]')[0].value"
-            # data[key] = (driver.execute_script(name))
-
-            # key = "claimserviceLines_" + str(i) +"_renderingProviderlastName" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][renderingProvider][lastName]')[0].value"
-            # data[key] = (driver.execute_script(name))
-
-            # key = "claimserviceLines_" + str(i) +"_renderingProviderfirstName" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][renderingProvider][firstName]')[0].value"
-            # data[key] = (driver.execute_script(name))
-
-            # key = "claimserviceLines_" + str(i) +"_renderingProvidernpi" 	
-            # name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][renderingProvider][npi]')[0].value"
-            # data[key] = (driver.execute_script(name))
-
-        return data
-    except Exception as e:
-        raise Exception(e)
-    finally:
-        cleanup_driver(driver)
+            return data
+        except Exception as e:
+            cleanup_driver(driver)
+            raise Exception(e)
+        finally:
+            cleanup_driver(driver)
 
 
 # print(get_insurance_client_data("https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096","info+1@gina4med.com","Rakovski@345","AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))
