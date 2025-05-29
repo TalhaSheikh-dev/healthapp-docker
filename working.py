@@ -94,7 +94,7 @@ def login_health_app(url, username, password, secret_key):
         )
         driver = webdriver.Chrome(service=service, options=options)
 
-        driver.set_page_load_timeout(30)  # Reduced from 30
+        driver.set_page_load_timeout(60)  # Reduced from 30
         
         # 1. Optimized page load and element interaction
         driver.get(url)
