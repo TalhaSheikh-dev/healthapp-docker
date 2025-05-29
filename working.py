@@ -52,18 +52,9 @@ def cleanup_driver(driver):
         # kill_chrome_processes()  
         gc.collect()
 
-def login_health_app(url, username, password, secret_key):
-    """Optimized login function for Health App with reduced execution time."""
-    
-    # Initialize driver outside try block for proper cleanup
-    driver = None
-    
+def login_health_app(url,username,password,secret_key):
+
     try:
-        # Precompute OTP before starting browser to save time
-        otp_code = get_otp(secret_key)
-        letters = ['a', 'b', 'c', 'd', 'e', 'f']  # Moved outside to avoid recreation
-        
-        # Chrome options with essential settings only
         options = webdriver.ChromeOptions()
         options.add_argument('--ignore-certificate-errors')	
         options.add_argument('--headless=new')
@@ -83,53 +74,58 @@ def login_health_app(url, username, password, secret_key):
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-features=NetworkService')
+        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        options.add_experimental_option("prefs",{
+            "download.default_directory" : dir_path,
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.images": 2
+            })   
         
-        # Only critical experimental options
-        options.add_experimental_option("prefs", {
-            "profile.default_content_setting_values.notifications": 2
-        })
-        
-        service = webdriver.ChromeService(
-            executable_path=os.environ.get("CHROMEDRIVER_PATH")
-        )
+        service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
         driver = webdriver.Chrome(service=service, options=options)
+        # driver = webdriver.Chrome(options=options)
+        driver.set_page_load_timeout(30)  # Set maximum page load time
 
-        driver.set_page_load_timeout(60)  # Reduced from 30
-        
-        # 1. Optimized page load and element interaction
+        # Navigate to URL and wait only for essential elements
         driver.get(url)
         
-        # Use JavaScript direct injection for faster form filling
-        driver.execute_script(f"""
-            document.getElementById('user_email').value = '{username}';
-            document.getElementById('user_password').value = '{password}';
-            document.getElementById('submitBtn').click();
-        """)
+        wait = WebDriverWait(driver, 10)
+        email_field = driver.find_element(By.ID, 'user_email')
+        password_field = driver.find_element(By.ID, 'user_password')
+        submit_btn = wait.until(EC.element_to_be_clickable((By.ID, 'submitBtn')))
+
+        # Perform login actions
+        email_field.send_keys(username)
+        password_field.send_keys(password)
+        submit_btn.click()
+
+        # Handle 2FA with optimized waiting
+        otp_code = get_otp(secret_key)
+        letters = ['a', 'b', 'c', 'd', 'e', 'f']
         
-        # 2. Optimized OTP handling
-        # Wait for any OTP field to appear (reduces wait time)
-        WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, '[id^="code_"]'))
-        )
-        
-        # Batch OTP field filling using JavaScript
-        for i in range(6):
-            field = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.ID, f"code_{letters[i]}")))
-            field.clear()
-            field.send_keys(otp_code[i])
-        
-        # Wait for submit button to be clickable
-        submit_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.NAME, 'commit')))
-        
-        # Click using JavaScript for reliability
-        driver.execute_script("arguments[0].click();", submit_btn)
+        try:
+            # Wait for OTP fields to be present (not necessarily visible)
+            wait.until(EC.presence_of_element_located((By.ID, 'code_a')))
+            
+            # Fill OTP quickly
+            for i in range(6):
+                code_field = driver.find_element(By.ID, f"code_{letters[i]}")
+                code_field.clear()
+                code_field.send_keys(otp_code[i])
+            
+            # Submit 2FA
+            commit_btn = wait.until(EC.element_to_be_clickable((By.NAME, 'commit')))
+            commit_btn.click()
+                        
+        except Exception as e:
+            logging.error(e,exc_info=True)
+            raise Exception("2FA is not setup properly or timed out")
+            
         return driver
 
     except Exception as e:
         logging.error(f"Login failed: {str(e)}", exc_info=True)
-        if driver:
+        if 'driver' in locals():
             driver.quit()
         raise Exception(f"Login failed: {str(e)}")
 
@@ -421,96 +417,59 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
 
 
 def get_insurance_client_data(url,user,password_our,secret_key):
-    driver = None
-    
-    JS_EXTRACTOR = """
-        function getSelectedText(select) {
-            if (!select) return "";
-            return select.options[select.selectedIndex]?.text || "";
-        }
-
-        const data = {
-            payer_id: document.querySelector("[name='payer[id]']")?.value || "",
-            payer_name: document.querySelector("[name='payer[name]']")?.value || "",
-            patient_lastName: document.querySelector("[name='dependent[lastName]']")?.value || "",
-            patient_firstName: document.querySelector("[name='dependent[firstName]']")?.value || "",
-            serviceLines: []
-        };
-
-        // More reliable service line detection
-        let i = 0;
-        while (i < 6) {
-            // Find the service date from element using precise selector
-            const dateFromSelector = `input[name='claim[serviceLines][${i}][serviceDateFrom]']`;
-            const fromEl = document.querySelector(dateFromSelector);
-            
-            // If element doesn't exist or has no value, stop processing
-            if (!fromEl || !fromEl.value) {
-                i++;
-                continue;
-            }
-
-            // Build service line data with fallbacks
-            const line = {
-                serviceDateFrom: fromEl.value,
-                serviceDateTo: document.querySelector(`input[name='claim[serviceLines][${i}][serviceDateTo]']`)?.value || "",
-                placeOfService: getSelectedText(document.querySelector(`select[name='claim[serviceLines][${i}][placeOfService]']`)),
-                modifiers: []
-            };
-
-            // Process modifiers with precise selectors
-            for (let x = 0; x < 4; x++) {
-                const modSelector = `input[name='claim[serviceLines][${i}][procedureModifiers][${x}]']`;
-                line.modifiers.push(document.querySelector(modSelector)?.value || "");
-            }
-
-            data.serviceLines.push(line);
-            i++;
-        }
-
-        return data;
-    """
-    for attempt in range(2):
+    try:
+        # url = "https://secure.simplepractice.com/billings/insurance"
+        driver = login_health_app(url,user,password_our,secret_key)
+    except Exception as e:
+        raise Exception(e)
+    try:
+        data = {}
+        time.sleep(5)
         try:
-            driver = login_health_app(url, user, password_our, secret_key)
-            
+            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
+        except:
+            print("here in new line")
+            driver.get(url)
             time.sleep(5)
-            
-            # Execute mega-extractor script
-            raw_data = driver.execute_script(JS_EXTRACTOR)
-            print(raw_data)
-            # Validate we got critical data
-            if not raw_data or not raw_data.get('payer_id'):
-                raise ValueError("Essential data missing")
-            
-            # Transform data structure
-            data = {
-                "payer_id": raw_data['payer_id'],
-                "payer_name": raw_data['payer_name'],
-                "patient_lastName": raw_data['patient_lastName'],
-                "patient_firstName": raw_data['patient_firstName']
-            }
-            
-            # Process service lines
-            for i, line in enumerate(raw_data['serviceLines']):
-                prefix = f"claim_serviceLines_{i}"
-                data.update({
-                    f"{prefix}_serviceDateFrom": line['serviceDateFrom'],
-                    f"{prefix}_serviceDateTo": line['serviceDateTo'],
-                    f"{prefix}_placeOfService": line['placeOfService'],
-                    **{
-                        f"{prefix}_procedureModifiers_{x}": mod
-                        for x, mod in enumerate(line['modifiers'])
-                    }
-                })
-            
-            return data
-        except Exception as e:
-            cleanup_driver(driver)
-            raise Exception(e)
-        finally:
-            cleanup_driver(driver)
+            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
+        print("done1")
+        data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
+        print("done2")
+        data["patient_lastName"] = (driver.execute_script("return document.getElementsByName('dependent[lastName]')[0].value"))
+        print("done3")
+        data["patient_firstName"] = (driver.execute_script("return document.getElementsByName('dependent[firstName]')[0].value"))
+        print("done4")    
 
+        for i in range(0,6):
+            #-----
+            key = "claim_serviceLines_" + str(i) +"_serviceDateFrom" 	
+            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateFrom]')[0].value"
+            check_data = (driver.execute_script(name))
+            
+            if check_data == "":
+                break
+            data[key] = check_data 
+            
+            key = "claim_serviceLines_" + str(i) +"_serviceDateTo" 	
+            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateTo]')[0].value"
+            data[key] = (driver.execute_script(name))
+
+            key = "claimserviceLines_" + str(i) +"_placeOfService" 	
+            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][placeOfService]')[0].options[document.getElementsByName('claim[serviceLines][" + str(i)+"][placeOfService]')[0].selectedIndex].text"      
+            data[key] = (driver.execute_script(name)) 
+            print("done56")
+            #-----
+            for x in range(0,4):
+                key = "claim_serviceLines_" + str(i) +"_procedureModifiers_"+str(x) 	
+                name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureModifiers]["+str(x)+"]')[0].value"
+                data[key] = (driver.execute_script(name))
+                print("done78")
+
+        return data
+    except Exception as e:
+        raise Exception(e)
+    finally:
+        cleanup_driver(driver)
 
 # print(get_insurance_client_data("https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096","info+1@gina4med.com","Rakovski@345","AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))
 
