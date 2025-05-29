@@ -89,7 +89,6 @@ def login_health_app(url,username,password,secret_key):
         # Navigate to URL and wait only for essential elements
         driver.get(url)
         
-        # Wait specifically for login fields (not full page load)
         wait = WebDriverWait(driver, 10)
         email_field = driver.find_element(By.ID, 'user_email')
         password_field = driver.find_element(By.ID, 'user_password')
