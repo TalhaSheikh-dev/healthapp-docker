@@ -129,6 +129,11 @@ def login_health_app(url,username,password,secret_key):
             driver.quit()
         raise Exception(f"Login failed: {str(e)}")
 
+try:
+    # url = "https://secure.simplepractice.com/billings/insurance"
+    driver = login_health_app(url,user,password_our,secret_key)
+except Exception as e:
+    raise Exception(e)
 
 def therapy_notes_claims_data(code, user_name,pass_word, date_start,date_end):
     try:
@@ -417,11 +422,12 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
 
 
 def get_insurance_client_data(url,user,password_our,secret_key):
-    try:
-        # url = "https://secure.simplepractice.com/billings/insurance"
-        driver = login_health_app(url,user,password_our,secret_key)
-    except Exception as e:
-        raise Exception(e)
+    # try:
+    #     # url = "https://secure.simplepractice.com/billings/insurance"
+    #     driver = login_health_app(url,user,password_our,secret_key)
+    # except Exception as e:
+    #     raise Exception(e)
+    driver.get(url)
     try:
         data = {}
         time.sleep(5)
@@ -468,8 +474,8 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         return data
     except Exception as e:
         raise Exception(e)
-    finally:
-        cleanup_driver(driver)
+    # finally:
+    #     cleanup_driver(driver)
 
 # print(get_insurance_client_data("https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096","info+1@gina4med.com","Rakovski@345","AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))
 
