@@ -63,9 +63,8 @@ def login_health_app(url,username,password,secret_key):
             options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
 
         service = webdriver.ChromeService(
-            executable_path=os.environ.get("CHROMEDRIVER_PATH"),
-            service_args=['--verbose'],  # For debugging if needed
-            log_output=None
+            executable_path=os.environ.get("CHROMEDRIVER_PATH")
+
         )
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(30)
