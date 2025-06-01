@@ -11,51 +11,27 @@ from datetime import datetime, timedelta
 from config import *
 from helper import *
 import logging
-import gc
-import tempfile
-import psutil
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-
-def kill_chrome_processes():
-    """Forcefully kill any remaining Chrome processes"""
-    try:
-        for proc in psutil.process_iter(['name']):
-            if proc.info['name'] and ('chrome' in proc.info['name'].lower() or 'chromedriver' in proc.info['name'].lower()):
-                try:
-                    proc.kill()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
-    except Exception as e:
-        logging.warning(f"Error killing Chrome processes: {str(e)}")
 
 def cleanup_driver(driver):
     """Enhanced driver cleanup"""
     if driver is None:
-        return
+        return None
     
     try:
-        try:
-            driver.close()
-        except:
-            pass
-        
-        try:
-            driver.quit()
-        except:
-            pass
-        
+        driver.close()
         del driver
+        return None
     except Exception as e:
         logging.error(f"Cleanup error: {str(e)}")
-    finally:
-        # kill_chrome_processes()  
-        gc.collect()
+        return None
 
 def login_health_app(url,username,password,secret_key):
 
     try:
         options = webdriver.ChromeOptions()
+        
         options.add_argument('--ignore-certificate-errors')	
         options.add_argument('--headless=new')
         options.add_argument("--disable-dev-shm-usage")
@@ -74,27 +50,35 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-features=NetworkService')
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
         options.add_experimental_option("prefs",{
             "download.default_directory" : dir_path,
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.images": 2
-            })   
-        
-        service = webdriver.ChromeService(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+            })  
+
+        # Set binary location if in Heroku environment
+        if 'GOOGLE_CHROME_BIN' in os.environ:
+            options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+
+        service = webdriver.ChromeService(
+            executable_path=os.environ.get("CHROMEDRIVER_PATH"),
+            service_args=['--verbose'],  # For debugging if needed
+            log_output=None
+        )
         driver = webdriver.Chrome(service=service, options=options)
-        # driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(30)  # Set maximum page load time
-
-        # Navigate to URL and wait only for essential elements
-        driver.get(url)
+        driver.set_page_load_timeout(30)
+        driver.implicitly_wait(0)  
         
+        
+        driver.get(url)
         wait = WebDriverWait(driver, 10)
-        email_field = driver.find_element(By.ID, 'user_email')
-        password_field = driver.find_element(By.ID, 'user_password')
+        email_field = wait.until(EC.presence_of_element_located((By.ID, 'user_email')))
+        password_field = wait.until(EC.presence_of_element_located((By.ID, 'user_password')))
         submit_btn = wait.until(EC.element_to_be_clickable((By.ID, 'submitBtn')))
-
-        # Perform login actions
+        
+        email_field.clear()
+        password_field.clear()
+        
         email_field.send_keys(username)
         password_field.send_keys(password)
         submit_btn.click()
@@ -129,11 +113,6 @@ def login_health_app(url,username,password,secret_key):
             driver.quit()
         raise Exception(f"Login failed: {str(e)}")
 
-try:
-    # url = "https://secure.simplepractice.com/billings/insurance"
-    driver = login_health_app(url,user,password_our,secret_key)
-except Exception as e:
-    raise Exception(e)
 
 def therapy_notes_claims_data(code, user_name,pass_word, date_start,date_end):
     try:
@@ -419,63 +398,96 @@ def id_get_page(from_date,end_date,number_page,user,password_our):
     finally:
         cleanup_driver(driver)
 
-
-
+        
 def get_insurance_client_data(url,user,password_our,secret_key):
-    # try:
-    #     # url = "https://secure.simplepractice.com/billings/insurance"
-    #     driver = login_health_app(url,user,password_our,secret_key)
-    # except Exception as e:
-    #     raise Exception(e)
-    driver.get(url)
-    try:
-        data = {}
-        time.sleep(5)
+    driver = login_health_app(url, user, password_our, secret_key)
+    
+    JS_EXTRACTOR = """
+        function getSelectedText(select) {
+            if (!select) return "";
+            return select.options[select.selectedIndex]?.text || "";
+        }
+
+        const data = {
+            payer_id: document.querySelector("[name='payer[id]']")?.value || "",
+            payer_name: document.querySelector("[name='payer[name]']")?.value || "",
+            patient_lastName: document.querySelector("[name='dependent[lastName]']")?.value || "",
+            patient_firstName: document.querySelector("[name='dependent[firstName]']")?.value || "",
+            serviceLines: []
+        };
+
+        // More reliable service line detection
+        let i = 0;
+        while (i < 6) {
+            // Find the service date from element using precise selector
+            const dateFromSelector = `input[name='claim[serviceLines][${i}][serviceDateFrom]']`;
+            const fromEl = document.querySelector(dateFromSelector);
+            
+            // If element doesn't exist or has no value, stop processing
+            if (!fromEl || !fromEl.value) {
+                i++;
+                continue;
+            }
+
+            // Build service line data with fallbacks
+            const line = {
+                serviceDateFrom: fromEl.value,
+                serviceDateTo: document.querySelector(`input[name='claim[serviceLines][${i}][serviceDateTo]']`)?.value || "",
+                placeOfService: getSelectedText(document.querySelector(`select[name='claim[serviceLines][${i}][placeOfService]']`)),
+                modifiers: []
+            };
+
+            // Process modifiers with precise selectors
+            for (let x = 0; x < 4; x++) {
+                const modSelector = `input[name='claim[serviceLines][${i}][procedureModifiers][${x}]']`;
+                line.modifiers.push(document.querySelector(modSelector)?.value || "");
+            }
+
+            data.serviceLines.push(line);
+            i++;
+        }
+
+        return data;
+    """
+    for attempt in range(2):
         try:
-            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
-        except:
-            print("here in new line")
-            driver.get(url)
             time.sleep(5)
-            data["payer_id"] = driver.execute_script("return document.getElementsByName('payer[id]')[0].value")
-        print("done1")
-        data["payer_name"] = (driver.execute_script("return document.getElementsByName('payer[name]')[0].value"))
-        print("done2")
-        data["patient_lastName"] = (driver.execute_script("return document.getElementsByName('dependent[lastName]')[0].value"))
-        print("done3")
-        data["patient_firstName"] = (driver.execute_script("return document.getElementsByName('dependent[firstName]')[0].value"))
-        print("done4")    
-
-        for i in range(0,6):
-            #-----
-            key = "claim_serviceLines_" + str(i) +"_serviceDateFrom" 	
-            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateFrom]')[0].value"
-            check_data = (driver.execute_script(name))
             
-            if check_data == "":
-                break
-            data[key] = check_data 
+            # Execute mega-extractor script
+            raw_data = driver.execute_script(JS_EXTRACTOR)
+            print(raw_data)
+            # Validate we got critical data
+            if not raw_data or not raw_data.get('payer_id'):
+                raise ValueError("Essential data missing")
             
-            key = "claim_serviceLines_" + str(i) +"_serviceDateTo" 	
-            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][serviceDateTo]')[0].value"
-            data[key] = (driver.execute_script(name))
+            # Transform data structure
+            data = {
+                "payer_id": raw_data['payer_id'],
+                "payer_name": raw_data['payer_name'],
+                "patient_lastName": raw_data['patient_lastName'],
+                "patient_firstName": raw_data['patient_firstName']
+            }
+            
+            # Process service lines
+            for i, line in enumerate(raw_data['serviceLines']):
+                prefix = f"claim_serviceLines_{i}"
+                data.update({
+                    f"{prefix}_serviceDateFrom": line['serviceDateFrom'],
+                    f"{prefix}_serviceDateTo": line['serviceDateTo'],
+                    f"{prefix}_placeOfService": line['placeOfService'],
+                    **{
+                        f"{prefix}_procedureModifiers_{x}": mod
+                        for x, mod in enumerate(line['modifiers'])
+                    }
+                })
+            
+            return data
+        except Exception as e:
+            cleanup_driver(driver)
+            raise Exception(e)
+        finally:
+            cleanup_driver(driver)
 
-            key = "claimserviceLines_" + str(i) +"_placeOfService" 	
-            name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][placeOfService]')[0].options[document.getElementsByName('claim[serviceLines][" + str(i)+"][placeOfService]')[0].selectedIndex].text"      
-            data[key] = (driver.execute_script(name)) 
-            print("done56")
-            #-----
-            for x in range(0,4):
-                key = "claim_serviceLines_" + str(i) +"_procedureModifiers_"+str(x) 	
-                name = "return document.getElementsByName('claim[serviceLines]["+str(i)+"][procedureModifiers]["+str(x)+"]')[0].value"
-                data[key] = (driver.execute_script(name))
-                print("done78")
-
-        return data
-    except Exception as e:
-        raise Exception(e)
-    # finally:
-    #     cleanup_driver(driver)
 
 # print(get_insurance_client_data("https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096","info+1@gina4med.com","Rakovski@345","AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))
 
