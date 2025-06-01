@@ -21,6 +21,7 @@ def cleanup_driver(driver):
     
     try:
         driver.close()
+        driver.quit()
         del driver
         return None
     except Exception as e:
@@ -68,7 +69,7 @@ def login_health_app(url,username,password,secret_key):
         )
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(30)
-        driver.implicitly_wait(0)  
+        # driver.implicitly_wait(0)  
         
         
         driver.get(url)
@@ -452,7 +453,7 @@ def get_insurance_client_data(url,user,password_our,secret_key):
     """
     for attempt in range(2):
         try:
-            time.sleep(5)
+            time.sleep(7)
             
             # Execute mega-extractor script
             raw_data = driver.execute_script(JS_EXTRACTOR)

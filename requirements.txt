@@ -1,4 +1,4 @@
-selenium==4.19.0
+selenium==4.33.0
 Flask==3.1.0
 gunicorn==22.0.0
 Werkzeug==3.1.3
