@@ -35,7 +35,7 @@ def login_health_app(url,username,password,secret_key):
         options.add_argument('--ignore-certificate-errors')	
         options.add_argument('--headless=new')
         options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument('--single-process')
+        options.add_argument('--single-process')
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-gpu")  # Add this
         options.add_argument("--disable-extensions")  # Add this
