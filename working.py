@@ -457,10 +457,10 @@ def get_insurance_client_data(url,user,password_our,secret_key):
             
             # Execute mega-extractor script
             raw_data = driver.execute_script(JS_EXTRACTOR)
-            print(raw_data)
             # Validate we got critical data
-            if not raw_data or not raw_data.get('payer_id'):
-                raise ValueError("Essential data missing")
+            if not raw_data.get('payer_id'):
+                continue
+                
             
             # Transform data structure
             data = {

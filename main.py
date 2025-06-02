@@ -3,19 +3,11 @@
 from flask import Flask,request,jsonify
 from working import *
 import logging
-import logging.handlers
 import json
 # initiating flask app 
 app= Flask(__name__)
 app.debug = False
 
-# Configure logging
-log_handler = logging.handlers.TimedRotatingFileHandler("app.log", when="midnight", interval=1, backupCount=1)
-log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-log_handler.suffix = "%Y-%m-%d"
-log_handler.setLevel(logging.INFO)
-logging.getLogger().addHandler(log_handler)
-logging.getLogger().setLevel(logging.INFO)
 
 # endpoint to test health of app
 @app.route('/health', methods=['POST'])
