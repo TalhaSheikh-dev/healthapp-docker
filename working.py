@@ -57,18 +57,9 @@ def login_health_app(url,username,password,secret_key):
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.images": 2
                     })  
-        if 'GOOGLE_CHROME_BIN' in os.environ:
-            options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        driver = webdriver.Chrome(options=options)
 
-        service = webdriver.ChromeService(
-            executable_path=os.environ.get("CHROMEDRIVER_PATH")
-
-        )
-        driver = webdriver.Chrome(service=service, options=options)
-        # driver = webdriver.Chrome(options=options)
-
-        driver.set_page_load_timeout(30)
-        
+        # driver.set_page_load_timeout(30)
         
         driver.get(url)
         wait = WebDriverWait(driver, 10)
