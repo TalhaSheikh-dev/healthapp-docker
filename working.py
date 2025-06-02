@@ -32,42 +32,31 @@ def login_health_app(url,username,password,secret_key):
 
     try:
         options = webdriver.ChromeOptions()
-        
-        # options.add_argument('--ignore-certificate-errors')	
-        # options.add_argument('--headless')
-        # options.add_argument("--disable-dev-shm-usage")
-        # # options.add_argument('--single-process')
-        # options.add_argument("--no-sandbox")
-        # options.add_argument("--disable-gpu")  # Add this
-        # options.add_argument("--disable-extensions")  # Add this
-        # options.add_argument("--disable-infobars")  # Add this
-        # options.add_argument("--disable-notifications")  # Add this
-        # options.add_argument("--disable-application-cache")  # Add this
-        # options.add_argument("--window-size=1280,720")  # Fixed syntax
+      
+        options.add_argument('--ignore-certificate-errors')	
+        options.add_argument('--headless=new')
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-gpu")  # Add this
+        options.add_argument("--disable-extensions")  # Add this
+        options.add_argument("--disable-infobars")  # Add this
+        options.add_argument("--disable-notifications")  # Add this
+        options.add_argument("--disable-application-cache")  # Add this
+        options.add_argument("--window-size=1280,720")  # Fixed syntax
         # options.add_argument("--incognito")
-        # options.add_argument("--disable-browser-side-navigation")  # Add this
-        # options.add_argument("--dns-prefetch-disable")  # Add this
-        # options.add_argument("--disable-setuid-sandbox")  # Add this
-        # options.add_argument('--disable-software-rasterizer')
-        # options.add_argument('--disable-background-timer-throttling')
-        # options.add_argument('--disable-backgrounding-occluded-windows')
-        # options.add_argument('--disable-features=NetworkService')
-        # options.add_argument('--blink-settings=imagesEnabled=false')
-        # options.add_experimental_option("prefs",{
-        #     "download.default_directory" : dir_path,
-        #     "profile.default_content_setting_values.notifications": 2,
-        #     "profile.managed_default_content_settings.images": 2
-                #     })  
-        options.add_argument('--headless=new')  # Use classic headless for stability
-        options.add_argument('--no-sandbox')  # Essential for Heroku
-        options.add_argument('--disable-dev-shm-usage')  # Essential for Heroku
-        options.add_argument('--disable-gpu')  # Recommended for headless
-        options.add_argument('--window-size=1280,720')
-
-        # Only add these if you specifically need them:
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--disable-extensions')
-        # Set binary location if in Heroku environment
+        options.add_argument("--disable-browser-side-navigation")  # Add this
+        options.add_argument("--dns-prefetch-disable")  # Add this
+        options.add_argument("--disable-setuid-sandbox")  # Add this
+        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-background-timer-throttling')
+        options.add_argument('--disable-backgrounding-occluded-windows')
+        options.add_argument('--disable-features=NetworkService')
+        options.add_argument('--blink-settings=imagesEnabled=false')
+        options.add_experimental_option("prefs",{
+            "download.default_directory" : dir_path,
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.images": 2
+                    })  
         if 'GOOGLE_CHROME_BIN' in os.environ:
             options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
 
@@ -76,6 +65,8 @@ def login_health_app(url,username,password,secret_key):
 
         )
         driver = webdriver.Chrome(service=service, options=options)
+        # driver = webdriver.Chrome(options=options)
+
         driver.set_page_load_timeout(30)
         
         
@@ -501,9 +492,10 @@ def get_insurance_client_data(url,user,password_our,secret_key):
         finally:
             cleanup_driver(driver)
 
-
+# from datetime import datetime
+# start = datetime.now()
 # print(get_insurance_client_data("https://secure.simplepractice.com/clients/1ca2a91b31c4cf5c/insurance_claims/216832096","info+1@gina4med.com","Rakovski@345","AW7WGIL4BFQO6B3K2TGDKCMXEJ7EHLI2NV7B4RP7IJBBTH5IDQKA"))
-
+# print(datetime.now()-start)
 def submit_claim_data(url,user,password_our,secret_key,modifier,is_submit):
     try:
         driver = login_health_app(url,user,password_our,secret_key)
