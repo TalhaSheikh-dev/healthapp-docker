@@ -58,7 +58,7 @@ def login_health_app(url,username,password,secret_key):
         #     "profile.default_content_setting_values.notifications": 2,
         #     "profile.managed_default_content_settings.images": 2
                 #     })  
-        options.add_argument('--headless')  # Use classic headless for stability
+        options.add_argument('--headless=new')  # Use classic headless for stability
         options.add_argument('--no-sandbox')  # Essential for Heroku
         options.add_argument('--disable-dev-shm-usage')  # Essential for Heroku
         options.add_argument('--disable-gpu')  # Recommended for headless
@@ -77,7 +77,6 @@ def login_health_app(url,username,password,secret_key):
         )
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(30)
-        # driver.implicitly_wait(0)  
         
         
         driver.get(url)
