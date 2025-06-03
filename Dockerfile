@@ -34,4 +34,4 @@ COPY . .
 EXPOSE 8010
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8010", "main:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8010", "--timeout", "120", "main:app"]
