@@ -34,35 +34,34 @@ def login_health_app(url,username,password,secret_key):
         options = webdriver.ChromeOptions()
       
         options.add_argument('--ignore-certificate-errors')	
-        options.add_argument('--headless=new')
+        options.add_argument('--headless')
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-gpu")  # Add this
-        options.add_argument("--disable-extensions")  # Add this
-        options.add_argument("--disable-infobars")  # Add this
-        options.add_argument("--disable-notifications")  # Add this
         options.add_argument("--disable-application-cache")  # Add this
         options.add_argument("--window-size=1280,720")  # Fixed syntax
-        # options.add_argument("--incognito")
-        options.add_argument("--disable-browser-side-navigation")  # Add this
-        options.add_argument("--dns-prefetch-disable")  # Add this
-        options.add_argument("--disable-setuid-sandbox")  # Add this
         options.add_argument('--disable-software-rasterizer')
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-features=NetworkService')
         options.add_argument('--blink-settings=imagesEnabled=false')
-        options.add_experimental_option("prefs",{
-            "download.default_directory" : dir_path,
-            "profile.default_content_setting_values.notifications": 2,
-            "profile.managed_default_content_settings.images": 2
-                    })  
+        options.add_argument("--disable-software-rasterizer")  # Fixes crashes on low CPU
+        options.add_argument("--disable-background-networking")  # Reduce background processes
+        options.add_argument("--disable-client-side-phishing-detection")  # Speed up
+        options.add_experimental_option("prefs", {
+            "download.default_directory": dir_path,
+            "profile.default_content_setting_values.notifications": 2,  # Block notifications
+            "profile.managed_default_content_settings.images": 2,  # Block images
+            "profile.default_content_settings.popups": 0,  # Block popups
+            "credentials_enable_service": False,  # Disable password saving
+            "profile.password_manager_enabled": False  # Disable password manager
+        })
         driver = webdriver.Chrome(options=options)
 
         # driver.set_page_load_timeout(30)
         
         driver.get(url)
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 20)
         email_field = wait.until(EC.presence_of_element_located((By.ID, 'user_email')))
         password_field = wait.until(EC.presence_of_element_located((By.ID, 'user_password')))
         submit_btn = wait.until(EC.element_to_be_clickable((By.ID, 'submitBtn')))
