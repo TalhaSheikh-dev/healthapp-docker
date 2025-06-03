@@ -10,7 +10,7 @@ app.debug = False
 
 
 # endpoint to test health of app
-@app.route('/health', methods=['POST'])
+@app.route('/', methods=['GET'])
 def health_test():
     return jsonify({"message": "successful"})
 
