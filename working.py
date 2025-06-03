@@ -61,7 +61,7 @@ def login_health_app(url,username,password,secret_key):
         # driver.set_page_load_timeout(30)
         
         driver.get(url)
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 20)
         email_field = wait.until(EC.presence_of_element_located((By.ID, 'user_email')))
         password_field = wait.until(EC.presence_of_element_located((By.ID, 'user_password')))
         submit_btn = wait.until(EC.element_to_be_clickable((By.ID, 'submitBtn')))
