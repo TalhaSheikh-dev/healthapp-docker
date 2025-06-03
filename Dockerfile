@@ -33,4 +33,4 @@ COPY . .
 # Expose the port Flask runs on
 EXPOSE 8010
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8010", "--timeout", "120", "main:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8010", "--timeout", "100", "main:app"]
